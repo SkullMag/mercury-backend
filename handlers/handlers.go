@@ -14,11 +14,7 @@ import (
 
 
 func Register(w http.ResponseWriter, req *http.Request) {
-    req.ParseForm()
-    errorResponse := map[string]string{"status": "error",
-                                       "error": ""}
-    successResponse := map[string]string{"status": "ok",
-                                         "token": ""}
+    errorResponse := map[string]string{"error": ""}
     if req.Method != "POST" {
         w.WriteHeader(405)
         return
@@ -48,8 +44,26 @@ func Register(w http.ResponseWriter, req *http.Request) {
         fmt.Fprintf(w, string(response))
         return
     }
-    successResponse["token"] = token 
-    response, _ := json.Marshal(successResponse)
-    fmt.Fprintf(w, string(response))
+}
 
+
+func Login(w http.ResponseWriter, req* http.Request) {
+    var user models.User
+    var dbUser models.User
+    decoder := json.NewDecoder(req.Body)
+    err := decoder.Decode(&user)
+    if err != nil {
+        w.WriteHeader(400)
+    }
+    database.DB.Where("username = ?", user.Username).First(&dbUser)
+    if dbUser.Salt == "" {
+        w.WriteHeader(400)
+        return
+    }
+    hasher := sha512.New()
+    hasher.Write([]byte(user.Password + dbUser.Salt))
+    if hex.EncodeToString(hasher.Sum(nil)) == dbUser.Password {
+        response, _ := json.Marshal(map[string]string{"token": dbUser.Token})
+        fmt.Fprintf(w, string(response))
+    }
 }
