@@ -8,3 +8,7 @@ type User struct {
     Salt string `json:"salt"`
     Token string `json:"token"`
 }
+
+func (User) TableName() string {
+    return "users"
+}
