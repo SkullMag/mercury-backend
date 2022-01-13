@@ -48,6 +48,10 @@ func Register(w http.ResponseWriter, req *http.Request) {
 
 
 func Login(w http.ResponseWriter, req* http.Request) {
+    if req.Method != "POST" {
+        w.WriteHeader(405)
+        return
+    }
     var user models.User
     var dbUser models.User
     errorResponse := map[string]string{"error": ""}
