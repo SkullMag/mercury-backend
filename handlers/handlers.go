@@ -50,20 +50,29 @@ func Register(w http.ResponseWriter, req *http.Request) {
 func Login(w http.ResponseWriter, req* http.Request) {
     var user models.User
     var dbUser models.User
+    errorResponse := map[string]string{"error": ""}
     decoder := json.NewDecoder(req.Body)
     err := decoder.Decode(&user)
     if err != nil {
         w.WriteHeader(400)
     }
-    database.DB.Where("username = ?", user.Username).First(&dbUser)
-    if dbUser.Salt == "" {
+    result := database.DB.Where("username = ?", user.Username).First(&dbUser)
+    if result.Error != nil {
         w.WriteHeader(400)
+        errorResponse["error"] = "Username was not found"
+        response, _ := json.Marshal(errorResponse)
+        fmt.Fprintf(w, string(response))
         return
     }
     hasher := sha512.New()
     hasher.Write([]byte(user.Password + dbUser.Salt))
     if hex.EncodeToString(hasher.Sum(nil)) == dbUser.Password {
         response, _ := json.Marshal(map[string]string{"token": dbUser.Token})
+        fmt.Fprintf(w, string(response))
+    } else {
+        w.WriteHeader(400)
+        errorResponse["error"] = "Wrong password"
+        response, _ := json.Marshal(errorResponse)
         fmt.Fprintf(w, string(response))
     }
 }
