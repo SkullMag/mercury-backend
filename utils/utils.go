@@ -1,9 +1,9 @@
 package utils
 
-
 import (
-    "crypto/rand"
-    "encoding/hex"
+	"crypto/rand"
+	"encoding/hex"
+	"net/http"
 )
 
 // https://gist.github.com/dopey/c69559607800d2f2f90b1b1ed4e550fb
@@ -22,7 +22,6 @@ func GenerateRandomBytes(n int) ([]byte, error) {
 	return b, nil
 }
 
-
 // GenerateRandomStringURLSafe returns a URL-safe, base64 encoded
 // securely generated random string.
 // It will return an error if the system's secure random
@@ -31,4 +30,8 @@ func GenerateRandomBytes(n int) ([]byte, error) {
 func GenerateRandomStringURLSafe(n int) (string, error) {
 	b, err := GenerateRandomBytes(n)
 	return hex.EncodeToString(b), err
+}
+
+func EnableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
