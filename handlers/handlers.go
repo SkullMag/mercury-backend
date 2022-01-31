@@ -5,27 +5,29 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"mercury/database"
 	"mercury/models"
 	"mercury/utils"
 	"net/http"
+	"os"
+
+	"github.com/gorilla/mux"
 )
 
 func Register(w http.ResponseWriter, req *http.Request) {
 	utils.EnableCors(&w)
+
 	errorResponse := map[string]string{"error": ""}
-	if req.Method != "POST" {
-		w.WriteHeader(405)
-		return
-	}
 	var user models.User
+
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&user)
 	if err != nil || user.Username == "" || user.Password == "" {
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		errorResponse["error"] = "Username or password was not provided"
 		response, _ := json.Marshal(errorResponse)
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 		return
 	}
 	token, _ := utils.GenerateRandomStringURLSafe(32)
@@ -37,63 +39,97 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	user.Salt = salt
 	result := database.DB.Create(&user)
 	if result.Error != nil {
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		errorResponse["error"] = "Username is not unique"
 		response, _ := json.Marshal(errorResponse)
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 		return
 	}
 }
 
 func Login(w http.ResponseWriter, req *http.Request) {
 	utils.EnableCors(&w)
-	if req.Method != "POST" {
-		w.WriteHeader(405)
-		return
-	}
+
 	var user models.User
 	var dbUser models.User
 	errorResponse := map[string]string{"error": ""}
-	decoder := json.NewDecoder(req.Body)
-	err := decoder.Decode(&user)
+	err := utils.ParseUser(&user, req)
 	if err != nil {
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 	}
 	result := database.DB.Where("username = ?", user.Username).First(&dbUser)
 	if result.Error != nil {
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		errorResponse["error"] = "Username was not found"
 		response, _ := json.Marshal(errorResponse)
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 		return
 	}
 	hasher := sha512.New()
 	hasher.Write([]byte(user.Password + dbUser.Salt))
 	if hex.EncodeToString(hasher.Sum(nil)) == dbUser.Password {
 		response, _ := json.Marshal(map[string]string{"token": dbUser.Token})
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	} else {
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		errorResponse["error"] = "Wrong password"
 		response, _ := json.Marshal(errorResponse)
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 }
 
 func CheckToken(w http.ResponseWriter, req *http.Request) {
-	if req.Method != "POST" {
-		w.WriteHeader(405)
-		return
-	}
+	utils.EnableCors(&w)
+
 	var user models.User
-	decoder := json.NewDecoder(req.Body)
-	decoder.Decode(&user)
-	if user.Token == "" {
-		w.WriteHeader(400)
+	err := utils.ParseAndAuthenticate(&user, &w, req)
+	if err != nil {
 		return
 	}
-	result := database.DB.Where("token = ?", user.Token).First(&user)
-	if result.Error != nil {
-		w.WriteHeader(400)
+}
+
+func GetUserData(w http.ResponseWriter, req *http.Request) {
+	utils.EnableCors(&w)
+
+	vars := mux.Vars(req)
+
+	// Token not provided
+	if _, ok := vars["token"]; !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
+
+	user := models.User{Token: vars["token"]}
+
+	// Invalid token
+	if err := utils.AuthenticateToken(&user); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	response, _ := json.Marshal(map[string]string{
+		"username": user.Username,
+	})
+	fmt.Fprint(w, string(response))
+}
+
+func GetUserProfilePicture(w http.ResponseWriter, req *http.Request) {
+	utils.EnableCors(&w)
+
+	vars := mux.Vars(req)
+
+	if _, ok := vars["username"]; !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	path, _ := os.Getwd()
+	fileBytes, err := ioutil.ReadFile(path + "/assets/" + vars["username"] + ".png")
+	if err != nil {
+		w.WriteHeader(404)
+		fmt.Println(err.Error())
+		return
+	}
+	w.Write(fileBytes)
+
 }
