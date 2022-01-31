@@ -3,12 +3,18 @@ package main
 import (
 	"mercury/handlers"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func main() {
-	http.HandleFunc("/api/register", handlers.Register)
-	http.HandleFunc("/api/login", handlers.Login)
-	http.HandleFunc("/api/checkToken", handlers.CheckToken)
+	router := mux.NewRouter()
 
-	http.ListenAndServe(":8080", nil)
+	router.HandleFunc("/api/register", handlers.Register).Methods("POST")
+	router.HandleFunc("/api/login", handlers.Login).Methods("POST")
+	router.HandleFunc("/api/checkToken/{token}", handlers.CheckToken).Methods("POST")
+	router.HandleFunc("/api/getUserData/{token}", handlers.GetUserData).Methods("POST")
+	router.HandleFunc("/api/getUserProfilePicture/{username}", handlers.GetUserProfilePicture).Methods("GET")
+
+	http.ListenAndServe(":8080", router)
 }
