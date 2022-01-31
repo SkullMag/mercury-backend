@@ -3,6 +3,10 @@ package utils
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"mercury/database"
+	"mercury/models"
 	"net/http"
 )
 
@@ -34,4 +38,32 @@ func GenerateRandomStringURLSafe(n int) (string, error) {
 
 func EnableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+func ParseUser(user *models.User, req *http.Request) error {
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(user)
+	return err
+}
+
+func AuthenticateToken(user *models.User) error {
+	result := database.DB.Table("users").Where("token = ?", user.Token).First(user)
+	return result.Error
+}
+
+func ParseAndAuthenticate(user *models.User, w *http.ResponseWriter, req *http.Request) error {
+	err := ParseUser(user, req)
+	if err != nil {
+		(*w).WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(*w, "{\"error\": \"error occurred while parsing input data\"}")
+		return err
+	}
+
+	isAuth := AuthenticateToken(user)
+	if isAuth != nil {
+		(*w).WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(*w, "{\"error\": \"invalid token\"}")
+		return isAuth
+	}
+	return nil
 }
