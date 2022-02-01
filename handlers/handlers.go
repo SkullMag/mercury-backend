@@ -11,6 +11,7 @@ import (
 	"mercury/utils"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -93,22 +94,23 @@ func GetUserData(w http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
 
-	// Token not provided
 	if _, ok := vars["token"]; !ok {
+		// Token not provided
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	user := models.User{Token: vars["token"]}
 
-	// Invalid token
 	if err := utils.AuthenticateToken(&user); err != nil {
+		// Invalid token
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	response, _ := json.Marshal(map[string]string{
-		"username": user.Username,
+		"username":     user.Username,
+		"isSubscribed": strconv.FormatBool(user.IsSubscribed),
 	})
 	fmt.Fprint(w, string(response))
 }
