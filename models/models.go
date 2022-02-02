@@ -29,10 +29,11 @@ func (Word) TableName() string {
 }
 
 type Definition struct {
-	ID         int
-	Definition string
-	Example    string
-	WordID     int
+	ID           int
+	PartOfSpeech string
+	Definition   string
+	Example      string
+	WordID       int
 }
 
 func (Definition) TableName() string {
