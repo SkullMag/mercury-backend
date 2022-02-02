@@ -16,3 +16,26 @@ type User struct {
 func (User) TableName() string {
 	return "users"
 }
+
+type Word struct {
+	ID          int
+	Word        string
+	Phonetics   string
+	Definitions []Definition
+}
+
+func (Word) TableName() string {
+	return "words"
+}
+
+type Definition struct {
+	ID           int
+	PartOfSpeech string
+	Definition   string
+	Example      string
+	WordID       int
+}
+
+func (Definition) TableName() string {
+	return "definitions"
+}
