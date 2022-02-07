@@ -40,6 +40,7 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	user.Salt = salt
 	result := database.DB.Create(&user)
 	if result.Error != nil {
+		fmt.Println(result.Error)
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse["error"] = "Username is not unique"
 		response, _ := json.Marshal(errorResponse)
@@ -69,7 +70,13 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	hasher := sha512.New()
 	hasher.Write([]byte(user.Password + dbUser.Salt))
 	if hex.EncodeToString(hasher.Sum(nil)) == dbUser.Password {
-		response, _ := json.Marshal(map[string]string{"token": dbUser.Token})
+		response, _ := json.Marshal(map[string]string{
+			"token":        dbUser.Token,
+			"fullname":     dbUser.Fullname,
+			"username":     dbUser.Username,
+			"isSubscribed": strconv.FormatBool(dbUser.IsSubscribed),
+			"profileBio":   dbUser.ProfileBio,
+		})
 		fmt.Fprint(w, string(response))
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
@@ -110,6 +117,8 @@ func GetUserData(w http.ResponseWriter, req *http.Request) {
 
 	response, _ := json.Marshal(map[string]string{
 		"username":     user.Username,
+		"fullname":     user.Fullname,
+		"profileBio":   user.ProfileBio,
 		"isSubscribed": strconv.FormatBool(user.IsSubscribed),
 	})
 	fmt.Fprint(w, string(response))
@@ -166,6 +175,7 @@ func GetDefinition(w http.ResponseWriter, req *http.Request) {
 	result := make(map[string]interface{})
 	result["word"] = word.Word
 	result["definitions"] = definitions
+	result["phonetics"] = word.Phonetics
 
 	jsonData, _ := json.Marshal(result)
 	fmt.Fprint(w, string(jsonData))
