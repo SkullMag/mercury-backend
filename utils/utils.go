@@ -6,10 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"mercury/constants"
 	"mercury/database"
 	"mercury/models"
 	"net/http"
 	"strings"
+
+	gomail "gopkg.in/gomail.v2"
 )
 
 // https://gist.github.com/dopey/c69559607800d2f2f90b1b1ed4e550fb
@@ -48,6 +51,22 @@ func GenerateVerificationCode() (string, error) {
 		code[i] = randInt.String()
 	}
 	return strings.Join(code, ""), nil
+}
+
+func MailVerificationCode(code string, email string) error {
+	m := gomail.NewMessage()
+
+	m.SetHeader("From", constants.Email)
+	m.SetHeader("To", email)
+	m.SetHeader("Subject", "Verification code")
+	m.SetBody("text/plain", "Your verification code for Mercury: "+code)
+
+	d := gomail.NewDialer("smtp.gmail.com", 587, constants.Email, constants.EmailPassword)
+
+	if err := d.DialAndSend(m); err != nil {
+		return err
+	}
+	return nil
 }
 
 func EnableCors(w *http.ResponseWriter) {

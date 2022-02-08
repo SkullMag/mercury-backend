@@ -50,7 +50,7 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func RequestConfirmationCode(w http.ResponseWriter, req *http.Request) {
+func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
 	utils.EnableCors(&w)
 
 	var confirmationCode models.ConfirmationCode
@@ -73,11 +73,10 @@ func RequestConfirmationCode(w http.ResponseWriter, req *http.Request) {
 		confirmationCode.StartTime = time.Now().Unix()
 		confirmationCode.Attempts = 0
 		database.DB.Create(&confirmationCode)
-		fmt.Fprint(w, `{"code": "`+confirmationCode.Code+`"}`)
+		utils.MailVerificationCode(confirmationCode.Code, confirmationCode.Email)
 		return
 	} else {
 		diff := time.Since(time.Unix(confirmationCode.StartTime, 0))
-		fmt.Println(confirmationCode.StartTime)
 		if diff.Seconds() < 60.0 {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(w, `{"error": "wait before requesting token"}`)
@@ -92,7 +91,11 @@ func RequestConfirmationCode(w http.ResponseWriter, req *http.Request) {
 		confirmationCode.Attempts = 0
 		confirmationCode.Code = code
 		database.DB.Save(&confirmationCode)
-		fmt.Fprint(w, `{"code": "`+code+`"}`)
+		mailError := utils.MailVerificationCode(confirmationCode.Code, confirmationCode.Email)
+		if mailError != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, `{"error": "Try to resend token"}`)
+		}
 	}
 
 }
