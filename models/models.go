@@ -41,3 +41,11 @@ type Definition struct {
 func (Definition) TableName() string {
 	return "definitions"
 }
+
+type ConfirmationCode struct {
+	ID        int
+	Code      string
+	Email     string
+	Attempts  int
+	StartTime int64
+}
