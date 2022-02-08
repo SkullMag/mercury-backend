@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -47,6 +48,53 @@ func Register(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprint(w, string(response))
 		return
 	}
+}
+
+func RequestConfirmationCode(w http.ResponseWriter, req *http.Request) {
+	utils.EnableCors(&w)
+
+	var confirmationCode models.ConfirmationCode
+
+	vars := mux.Vars(req)
+	if _, ok := vars["email"]; !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `"error": "no email provided"`)
+		return
+	}
+	database.DB.Where("email = ?", vars["email"]).First(&confirmationCode)
+	if confirmationCode.Code == "" {
+		code, err := utils.GenerateVerificationCode()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		confirmationCode.Code = code
+		confirmationCode.Email = vars["email"]
+		confirmationCode.StartTime = time.Now().Unix()
+		confirmationCode.Attempts = 0
+		database.DB.Create(&confirmationCode)
+		fmt.Fprint(w, `{"code": "`+confirmationCode.Code+`"}`)
+		return
+	} else {
+		diff := time.Since(time.Unix(confirmationCode.StartTime, 0))
+		fmt.Println(confirmationCode.StartTime)
+		if diff.Seconds() < 60.0 {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, `{"error": "wait before requesting token"}`)
+			return
+		}
+		code, err := utils.GenerateVerificationCode()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		confirmationCode.StartTime = time.Now().Unix()
+		confirmationCode.Attempts = 0
+		confirmationCode.Code = code
+		database.DB.Save(&confirmationCode)
+		fmt.Fprint(w, `{"code": "`+code+`"}`)
+	}
+
 }
 
 func Login(w http.ResponseWriter, req *http.Request) {

@@ -16,6 +16,7 @@ func main() {
 	router.HandleFunc("/api/getUserData/{token}", handlers.GetUserData).Methods("GET")
 	router.HandleFunc("/api/getUserProfilePicture/{username}", handlers.GetUserProfilePicture).Methods("GET")
 	router.HandleFunc("/api/definition/{word}", handlers.GetDefinition).Methods("GET")
+	router.HandleFunc("/api/requestConfirmationCode/{email}", handlers.RequestConfirmationCode).Methods("GET")
 
 	http.ListenAndServe(":8080", router)
 }
