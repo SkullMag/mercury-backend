@@ -5,9 +5,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"mercury/database"
 	"mercury/models"
 	"net/http"
+	"strings"
 )
 
 // https://gist.github.com/dopey/c69559607800d2f2f90b1b1ed4e550fb
@@ -34,6 +36,18 @@ func GenerateRandomBytes(n int) ([]byte, error) {
 func GenerateRandomStringURLSafe(n int) (string, error) {
 	b, err := GenerateRandomBytes(n)
 	return hex.EncodeToString(b), err
+}
+
+func GenerateVerificationCode() (string, error) {
+	code := make([]string, 4)
+	for i := 0; i < 4; i++ {
+		randInt, err := rand.Int(rand.Reader, big.NewInt(10))
+		if err != nil {
+			return "", err
+		}
+		code[i] = randInt.String()
+	}
+	return strings.Join(code, ""), nil
 }
 
 func EnableCors(w *http.ResponseWriter) {
