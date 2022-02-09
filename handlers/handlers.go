@@ -88,9 +88,31 @@ func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	if _, ok := vars["email"]; !ok {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `"error": "No email provided"`)
+		fmt.Fprint(w, `{"error": "Email wasn't provided provided"}`)
 		return
 	}
+	if _, ok := vars["username"]; !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Username wasn't provided"}`)
+		return
+	}
+
+	var tempUser models.User
+
+	username := database.DB.Table("users").Where("username = ?", vars["username"]).Find(&tempUser)
+	if username.RowsAffected > 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Username already exists"}`)
+		return
+	}
+
+	email := database.DB.Table("users").Where("email = ?", vars["email"]).Find(&tempUser)
+	if email.RowsAffected > 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Email is registered"}`)
+		return
+	}
+
 	database.DB.Where("email = ?", vars["email"]).First(&verificationCode)
 	if verificationCode.Code == "" {
 		code, err := utils.GenerateVerificationCode()
