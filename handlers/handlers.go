@@ -17,21 +17,51 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func Register(w http.ResponseWriter, req *http.Request) {
+func SignUp(w http.ResponseWriter, req *http.Request) {
 	utils.EnableCors(&w)
 
 	errorResponse := map[string]string{"error": ""}
 	var user models.User
+	var verificationCode models.VerificationCode
 
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&user)
-	if err != nil || user.Username == "" || user.Password == "" {
+
+	// Check body of request
+	if err != nil || user.Username == "" || user.Password == "" || user.Fullname == "" || user.Email == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse["error"] = "Username or password was not provided"
 		response, _ := json.Marshal(errorResponse)
 		fmt.Fprint(w, string(response))
 		return
 	}
+
+	// Check verification code
+	if user.VerificationCode == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "No verification code was provided"}`)
+		return
+	} else {
+		database.DB.Where("email = ?", user.Email).First(&verificationCode)
+		if verificationCode.Code == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, `{"error": "No verification code was requested"}`)
+			return
+		}
+		if verificationCode.Attempts > 3 {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, `{"error": "Request another verification code"}`)
+			return
+		}
+		if verificationCode.Code != user.VerificationCode {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, `{"error": "Wrong verification code"}`)
+			verificationCode.Attempts++
+			database.DB.Save(&verificationCode)
+			return
+		}
+	}
+
 	token, _ := utils.GenerateRandomStringURLSafe(32)
 	salt, _ := utils.GenerateRandomStringURLSafe(32)
 	hasher := sha512.New()
@@ -43,7 +73,7 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	if result.Error != nil {
 		fmt.Println(result.Error)
 		w.WriteHeader(http.StatusBadRequest)
-		errorResponse["error"] = "Username is not unique"
+		errorResponse["error"] = "Username or email is not unique"
 		response, _ := json.Marshal(errorResponse)
 		fmt.Fprint(w, string(response))
 		return
