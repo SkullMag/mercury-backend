@@ -12,25 +12,56 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
 
-func Register(w http.ResponseWriter, req *http.Request) {
+func SignUp(w http.ResponseWriter, req *http.Request) {
 	utils.EnableCors(&w)
 
 	errorResponse := map[string]string{"error": ""}
 	var user models.User
+	var verificationCode models.VerificationCode
 
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&user)
-	if err != nil || user.Username == "" || user.Password == "" {
+
+	// Check body of request
+	if err != nil || user.Username == "" || user.Password == "" || user.Fullname == "" || user.Email == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse["error"] = "Username or password was not provided"
 		response, _ := json.Marshal(errorResponse)
 		fmt.Fprint(w, string(response))
 		return
 	}
+
+	// Check verification code
+	if user.VerificationCode == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "No verification code was provided"}`)
+		return
+	} else {
+		database.DB.Where("email = ?", user.Email).First(&verificationCode)
+		if verificationCode.Code == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, `{"error": "No verification code was requested"}`)
+			return
+		}
+		if verificationCode.Attempts > 3 {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, `{"error": "Request another verification code"}`)
+			return
+		}
+		if verificationCode.Code != user.VerificationCode {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, `{"error": "Wrong verification code"}`)
+			verificationCode.Attempts++
+			database.DB.Save(&verificationCode)
+			return
+		}
+	}
+
 	token, _ := utils.GenerateRandomStringURLSafe(32)
 	salt, _ := utils.GenerateRandomStringURLSafe(32)
 	hasher := sha512.New()
@@ -42,11 +73,83 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	if result.Error != nil {
 		fmt.Println(result.Error)
 		w.WriteHeader(http.StatusBadRequest)
-		errorResponse["error"] = "Username is not unique"
+		errorResponse["error"] = "Username or email is not unique"
 		response, _ := json.Marshal(errorResponse)
 		fmt.Fprint(w, string(response))
 		return
 	}
+}
+
+func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
+	utils.EnableCors(&w)
+
+	var verificationCode models.VerificationCode
+
+	vars := mux.Vars(req)
+	if _, ok := vars["email"]; !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Email wasn't provided provided"}`)
+		return
+	}
+	if _, ok := vars["username"]; !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Username wasn't provided"}`)
+		return
+	}
+
+	var tempUser models.User
+
+	username := database.DB.Table("users").Where("username = ?", vars["username"]).Find(&tempUser)
+	if username.RowsAffected > 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Username already exists"}`)
+		return
+	}
+
+	email := database.DB.Table("users").Where("email = ?", vars["email"]).Find(&tempUser)
+	if email.RowsAffected > 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Email is registered"}`)
+		return
+	}
+
+	database.DB.Where("email = ?", vars["email"]).First(&verificationCode)
+	if verificationCode.Code == "" {
+		code, err := utils.GenerateVerificationCode()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		verificationCode.Code = code
+		verificationCode.Email = vars["email"]
+		verificationCode.StartTime = time.Now().Unix()
+		verificationCode.Attempts = 0
+		database.DB.Create(&verificationCode)
+		utils.MailVerificationCode(verificationCode.Code, verificationCode.Email)
+		return
+	} else {
+		diff := time.Since(time.Unix(verificationCode.StartTime, 0))
+		if diff.Seconds() < 60.0 {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, `{"error": "Wait before requesting token"}`)
+			return
+		}
+		code, err := utils.GenerateVerificationCode()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		verificationCode.StartTime = time.Now().Unix()
+		verificationCode.Attempts = 0
+		verificationCode.Code = code
+		database.DB.Save(&verificationCode)
+		mailError := utils.MailVerificationCode(verificationCode.Code, verificationCode.Email)
+		if mailError != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, `{"error": "Try to resend token"}`)
+		}
+	}
+
 }
 
 func Login(w http.ResponseWriter, req *http.Request) {

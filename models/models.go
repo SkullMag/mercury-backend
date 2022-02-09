@@ -5,14 +5,16 @@ type Tabler interface {
 }
 
 type User struct {
-	ID           int
-	Username     string `json:"username"`
-	Fullname     string `json:"fullname"`
-	ProfileBio   string `json:"profileBio"`
-	Password     string `json:"password"`
-	Salt         string `json:"salt"`
-	Token        string `json:"token"`
-	IsSubscribed bool   `json:"isSubscribed" gorm:"default:false"`
+	ID               int
+	Username         string `json:"username"`
+	Email            string `json:"email"`
+	Fullname         string `json:"fullname"`
+	ProfileBio       string `json:"profileBio"`
+	Password         string `json:"password"`
+	Salt             string `json:"salt"`
+	Token            string `json:"token"`
+	IsSubscribed     bool   `json:"isSubscribed" gorm:"default:false"`
+	VerificationCode string `json:"verificationCode" gorm:"-"`
 }
 
 func (User) TableName() string {
@@ -40,4 +42,12 @@ type Definition struct {
 
 func (Definition) TableName() string {
 	return "definitions"
+}
+
+type VerificationCode struct {
+	ID        int
+	Code      string
+	Email     string
+	Attempts  int
+	StartTime int64
 }
