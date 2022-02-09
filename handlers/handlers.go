@@ -53,33 +53,33 @@ func Register(w http.ResponseWriter, req *http.Request) {
 func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
 	utils.EnableCors(&w)
 
-	var confirmationCode models.ConfirmationCode
+	var verificationCode models.VerificationCode
 
 	vars := mux.Vars(req)
 	if _, ok := vars["email"]; !ok {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `"error": "no email provided"`)
+		fmt.Fprint(w, `"error": "No email provided"`)
 		return
 	}
-	database.DB.Where("email = ?", vars["email"]).First(&confirmationCode)
-	if confirmationCode.Code == "" {
+	database.DB.Where("email = ?", vars["email"]).First(&verificationCode)
+	if verificationCode.Code == "" {
 		code, err := utils.GenerateVerificationCode()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		confirmationCode.Code = code
-		confirmationCode.Email = vars["email"]
-		confirmationCode.StartTime = time.Now().Unix()
-		confirmationCode.Attempts = 0
-		database.DB.Create(&confirmationCode)
-		utils.MailVerificationCode(confirmationCode.Code, confirmationCode.Email)
+		verificationCode.Code = code
+		verificationCode.Email = vars["email"]
+		verificationCode.StartTime = time.Now().Unix()
+		verificationCode.Attempts = 0
+		database.DB.Create(&verificationCode)
+		utils.MailVerificationCode(verificationCode.Code, verificationCode.Email)
 		return
 	} else {
-		diff := time.Since(time.Unix(confirmationCode.StartTime, 0))
+		diff := time.Since(time.Unix(verificationCode.StartTime, 0))
 		if diff.Seconds() < 60.0 {
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprint(w, `{"error": "wait before requesting token"}`)
+			fmt.Fprint(w, `{"error": "Wait before requesting token"}`)
 			return
 		}
 		code, err := utils.GenerateVerificationCode()
@@ -87,11 +87,11 @@ func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		confirmationCode.StartTime = time.Now().Unix()
-		confirmationCode.Attempts = 0
-		confirmationCode.Code = code
-		database.DB.Save(&confirmationCode)
-		mailError := utils.MailVerificationCode(confirmationCode.Code, confirmationCode.Email)
+		verificationCode.StartTime = time.Now().Unix()
+		verificationCode.Attempts = 0
+		verificationCode.Code = code
+		database.DB.Save(&verificationCode)
+		mailError := utils.MailVerificationCode(verificationCode.Code, verificationCode.Email)
 		if mailError != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(w, `{"error": "Try to resend token"}`)
