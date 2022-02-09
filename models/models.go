@@ -7,13 +7,14 @@ type Tabler interface {
 type User struct {
 	ID               int
 	Username         string `json:"username"`
+	Email            string `json:"email"`
 	Fullname         string `json:"fullname"`
 	ProfileBio       string `json:"profileBio"`
 	Password         string `json:"password"`
 	Salt             string `json:"salt"`
 	Token            string `json:"token"`
 	IsSubscribed     bool   `json:"isSubscribed" gorm:"default:false"`
-	VerificationCode string `gorm:"-"`
+	VerificationCode string `json:"verificationCode" gorm:"-"`
 }
 
 func (User) TableName() string {
