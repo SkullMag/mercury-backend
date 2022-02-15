@@ -21,18 +21,18 @@ type User struct {
 }
 
 type Word struct {
-	ID          int
-	Word        string
-	Phonetics   string
-	Definitions []Definition
+	ID          int          `json:"-"`
+	Word        string       `json:"word"`
+	Phonetics   string       `json:"phonetics"`
+	Definitions []Definition `json:"definitions"`
 }
 
 type Definition struct {
-	ID           int
-	PartOfSpeech string
-	Definition   string
-	Example      string
-	WordID       int
+	ID           int    `json:"-"`
+	PartOfSpeech string `json:"partOfSpeech"`
+	Definition   string `json:"definition"`
+	Example      string `json:"example"`
+	WordID       int    `json:"-"`
 }
 
 type VerificationCode struct {
@@ -44,10 +44,11 @@ type VerificationCode struct {
 }
 
 type CollectionWord struct {
-	ID           int
-	CollectionID int
-	WordID       int
-	Priority     int
+	ID           int  `json:"-"`
+	CollectionID int  `json:"-"`
+	WordID       int  `json:"-"`
+	Word         Word `json:"collectionWord"`
+	Priority     int  `json:"priority"`
 }
 
 type Collection struct {
