@@ -62,6 +62,8 @@ func CreateCollection(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Better to handle this with the unique constraint
+	// to reduce number of database requests
 	database.DB.Select("name").Where("user_id = ? and name = ?", user.ID, vars["name"]).Find(&collection)
 	if collection.Name != "" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -73,5 +75,23 @@ func CreateCollection(w http.ResponseWriter, req *http.Request) {
 		Name:   vars["name"],
 		UserID: user.ID,
 	})
+
+}
+
+func GetCollections(w http.ResponseWriter, req *http.Request) {
+	utils.EnableCors(&w)
+
+	vars := mux.Vars(req)
+	var user models.User
+
+	database.DB.Preload("Collections.Words").Where("username = ?", vars["username"]).Find(&user)
+	if user.Username == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "User was not found"}`)
+		return
+	}
+
+	response, _ := json.Marshal(&user.Collections)
+	fmt.Fprint(w, string(response))
 
 }

@@ -18,6 +18,7 @@ func main() {
 	router.HandleFunc("/api/definition/{word}", handlers.GetDefinition).Methods("GET")
 	router.HandleFunc("/api/requestVerificationCode/{username}/{email}", handlers.RequestVerificationCode).Methods("GET")
 	router.HandleFunc("/api/createCollection/{token}/{name}", handlers.CreateCollection).Methods("POST")
+	router.HandleFunc("/api/getCollections/{username}", handlers.GetCollections).Methods("GET")
 
 	http.ListenAndServe(":8080", router)
 }
