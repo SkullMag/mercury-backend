@@ -16,11 +16,6 @@ func GetDefinition(w http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
 
-	if _, ok := vars["word"]; !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
 	var word models.Word
 	database.DB.Where("word = ?", vars["word"]).First(&word)
 	if word.Word == "" {
@@ -52,31 +47,31 @@ func CreateCollection(w http.ResponseWriter, req *http.Request) {
 
 	var user models.User
 	var collection models.Collection
-
 	vars := mux.Vars(req)
-	if _, ok := vars["token"]; !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `{"error": "no token provided"}`)
-		return
-	}
-	if _, ok := vars["name"]; !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `{"error": "no collection name provided"}`)
-		return
-	}
-	if len(vars["name"]) < 3 {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `{"error": "Collection name should be at least 3 characters long"}`)
-		return
-	}
 
-	database.DB.Select("username").Where("token = ?", vars["token"]).Find(&user)
+	database.DB.Select("id", "username").Where("token = ?", vars["token"]).Find(&user)
 	if user.Username == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "Invalid token"}`)
 		return
 	}
 
-	collection.Name = vars["name"]
+	if len(vars["name"]) < 3 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Collection name should be at least 3 characters long"}`)
+		return
+	}
+
+	database.DB.Select("name").Where("user_id = ? and name = ?", user.ID, vars["name"]).Find(&collection)
+	if collection.Name != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "You've already created a collection with this name"}`)
+		return
+	}
+
+	database.DB.Create(&models.Collection{
+		Name:   vars["name"],
+		UserID: user.ID,
+	})
 
 }
