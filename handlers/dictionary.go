@@ -121,7 +121,7 @@ func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprint(w, `{"error": "User was not found"}`)
 	}
 
-	database.DB.Preload("Words.Word.Definitions").Where("name = ? and user_id = ?", vars["name"], requestedUser.ID).Find(&collection)
+	database.DB.Preload("Words.Word.Definitions").Where("name = ? and user_id = ?", vars["collectionName"], requestedUser.ID).Find(&collection)
 	if collection.Name == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "Collection was not found"}`)

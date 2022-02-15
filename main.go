@@ -18,7 +18,7 @@ func main() {
 	router.HandleFunc("/api/requestVerificationCode/{username}/{email}", handlers.RequestVerificationCode).Methods("GET")
 	router.HandleFunc("/api/createCollection/{token}/{name}", handlers.CreateCollection).Methods("POST")
 	router.HandleFunc("/api/getCollections/{token}/{username}", handlers.GetCollections).Methods("GET")
-	router.HandleFunc("/api/getCollectionWords/{token}/{username}/{name}", handlers.GetCollectionWords).Methods("GET")
+	router.HandleFunc("/api/getCollectionWords/{token}/{username}/{collectionName}", handlers.GetCollectionWords).Methods("GET")
 
 	http.ListenAndServe(":8080", router)
 }
