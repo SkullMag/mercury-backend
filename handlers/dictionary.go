@@ -49,10 +49,7 @@ func CreateCollection(w http.ResponseWriter, req *http.Request) {
 	var collection models.Collection
 	vars := mux.Vars(req)
 
-	database.DB.Select("id", "username").Where("token = ?", vars["token"]).Find(&user)
-	if user.Username == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `{"error": "Invalid token"}`)
+	if status := utils.AuthenticateToken(&w, req, &user, vars["token"]); !status {
 		return
 	}
 
@@ -84,6 +81,10 @@ func GetCollections(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	var user models.User
 
+	if status := utils.AuthenticateToken(&w, req, &user, vars["token"]); !status {
+		return
+	}
+
 	database.DB.Preload("Collections.Words").Where("username = ?", vars["username"]).Find(&user)
 	if user.Username == "" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -91,7 +92,48 @@ func GetCollections(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if user.Username != vars["username"] && !user.IsSubscribed {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Subscribe to see another users collections"}`)
+		return
+	}
+
 	response, _ := json.Marshal(&user.Collections)
 	fmt.Fprint(w, string(response))
 
+}
+
+func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
+	utils.EnableCors(&w)
+
+	vars := mux.Vars(req)
+	var user models.User
+	var requestedUser models.User
+	var collection models.Collection
+
+	if status := utils.AuthenticateToken(&w, req, &user, vars["token"]); !status {
+		return
+	}
+
+	database.DB.Where("username = ?", vars["username"]).Find(&requestedUser)
+	if requestedUser.Username == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "User was not found"}`)
+	}
+
+	database.DB.Preload("Words.Word.Definitions").Where("name = ? and user_id = ?", vars["name"], requestedUser.ID).Find(&collection)
+	if collection.Name == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Collection was not found"}`)
+		return
+	}
+
+	if user.ID != collection.UserID && !user.IsSubscribed {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Subscribe to see another users collections"}`)
+		return
+	}
+
+	response, _ := json.Marshal(&collection.Words)
+	fmt.Fprint(w, string(response))
 }
