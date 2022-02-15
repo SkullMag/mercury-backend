@@ -17,19 +17,11 @@ type User struct {
 	VerificationCode string `json:"verificationCode" gorm:"-"`
 }
 
-func (User) TableName() string {
-	return "users"
-}
-
 type Word struct {
 	ID          int
 	Word        string
 	Phonetics   string
 	Definitions []Definition
-}
-
-func (Word) TableName() string {
-	return "words"
 }
 
 type Definition struct {
@@ -38,10 +30,6 @@ type Definition struct {
 	Definition   string
 	Example      string
 	WordID       int
-}
-
-func (Definition) TableName() string {
-	return "definitions"
 }
 
 type VerificationCode struct {
