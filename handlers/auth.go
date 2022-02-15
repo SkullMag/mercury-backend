@@ -9,7 +9,9 @@ import (
 	"mercury/models"
 	"mercury/utils"
 	"net/http"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -24,6 +26,7 @@ func SignUp(w http.ResponseWriter, req *http.Request) {
 
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&user)
+	user.Username = strings.ToLower(user.Username)
 
 	// Check body of request
 	if err != nil || user.Username == "" || user.Password == "" || user.Fullname == "" || user.Email == "" {
@@ -58,6 +61,12 @@ func SignUp(w http.ResponseWriter, req *http.Request) {
 			database.DB.Save(&verificationCode)
 			return
 		}
+	}
+
+	if matched, _ := regexp.MatchString("^[A-z1-9]+$", user.Username); !matched {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Username should only contain ASCII characters"}`)
+		return
 	}
 
 	token, _ := utils.GenerateRandomStringURLSafe(32)
