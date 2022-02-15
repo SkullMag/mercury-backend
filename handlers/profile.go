@@ -27,13 +27,6 @@ func GetUserData(w http.ResponseWriter, req *http.Request) {
 	utils.EnableCors(&w)
 
 	vars := mux.Vars(req)
-
-	if _, ok := vars["token"]; !ok {
-		// Token not provided
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
 	user := models.User{Token: vars["token"]}
 
 	if err := utils.AuthenticateToken(&user); err != nil {
@@ -55,11 +48,6 @@ func GetUserProfilePicture(w http.ResponseWriter, req *http.Request) {
 	utils.EnableCors(&w)
 
 	vars := mux.Vars(req)
-
-	if _, ok := vars["username"]; !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
 
 	path, _ := os.Getwd()
 	fileBytes, err := ioutil.ReadFile(path + "/assets/" + vars["username"] + ".png")

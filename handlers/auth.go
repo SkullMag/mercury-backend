@@ -119,20 +119,9 @@ func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
 	utils.EnableCors(&w)
 
 	var verificationCode models.VerificationCode
+	var tempUser models.User
 
 	vars := mux.Vars(req)
-	if _, ok := vars["email"]; !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `{"error": "Email wasn't provided provided"}`)
-		return
-	}
-	if _, ok := vars["username"]; !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `{"error": "Username wasn't provided"}`)
-		return
-	}
-
-	var tempUser models.User
 
 	username := database.DB.Table("users").Where("username = ?", vars["username"]).Find(&tempUser)
 	if username.RowsAffected > 0 {
