@@ -13,25 +13,13 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func CheckToken(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
-	var user models.User
-	err := utils.ParseAndAuthenticate(&user, &w, req)
-	if err != nil {
-		return
-	}
-}
-
 func GetUserData(w http.ResponseWriter, req *http.Request) {
 	utils.EnableCors(&w)
 
 	vars := mux.Vars(req)
-	user := models.User{Token: vars["token"]}
+	var user models.User
 
-	if err := utils.AuthenticateToken(&user); err != nil {
-		// Invalid token
-		w.WriteHeader(http.StatusBadRequest)
+	if status := utils.AuthenticateToken(&w, req, &user, vars["token"]); !status {
 		return
 	}
 
