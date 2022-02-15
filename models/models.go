@@ -1,5 +1,7 @@
 package models
 
+import "encoding/json"
+
 type Tabler interface {
 	TableName() string
 }
@@ -15,6 +17,7 @@ type User struct {
 	Token            string `json:"token"`
 	IsSubscribed     bool   `json:"isSubscribed" gorm:"default:false"`
 	VerificationCode string `json:"verificationCode" gorm:"-"`
+	Collections      []Collection
 }
 
 type Word struct {
@@ -48,8 +51,22 @@ type CollectionWord struct {
 }
 
 type Collection struct {
-	ID     int
-	Name   string
-	Words  []CollectionWord
-	UserID int
+	ID        int              `json:"-"`
+	Name      string           `json:"name"`
+	Words     []CollectionWord `json:"-"`
+	UserID    int              `json:"-"`
+	Likes     int              `json:"likes"`
+	WordCount int              `json:"wordCount"`
+}
+
+func (c Collection) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Name      string `json:"name"`
+		Likes     int    `json:"likes"`
+		WordCount int    `json:"wordCount"`
+	}{
+		Name:      c.Name,
+		Likes:     c.Likes,
+		WordCount: len(c.Words),
+	})
 }
