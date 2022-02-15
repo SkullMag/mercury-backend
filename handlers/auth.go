@@ -96,6 +96,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	err := utils.ParseUser(&user, req)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	result := database.DB.Where("username = ?", user.Username).First(&dbUser)
 	if result.Error != nil {
