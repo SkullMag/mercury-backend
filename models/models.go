@@ -39,3 +39,17 @@ type VerificationCode struct {
 	Attempts  int
 	StartTime int64
 }
+
+type CollectionWord struct {
+	ID           int
+	CollectionID int
+	WordID       int
+	Priority     int
+}
+
+type Collection struct {
+	ID     int
+	Name   string
+	Words  []CollectionWord
+	Author string
+}
