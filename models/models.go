@@ -51,5 +51,5 @@ type Collection struct {
 	ID     int
 	Name   string
 	Words  []CollectionWord
-	Author string
+	UserID int
 }
