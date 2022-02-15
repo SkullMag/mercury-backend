@@ -5,12 +5,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"mercury/database"
 	"mercury/models"
 	"mercury/utils"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -77,6 +75,43 @@ func SignUp(w http.ResponseWriter, req *http.Request) {
 		response, _ := json.Marshal(errorResponse)
 		fmt.Fprint(w, string(response))
 		return
+	}
+}
+
+func Login(w http.ResponseWriter, req *http.Request) {
+	utils.EnableCors(&w)
+
+	var user models.User
+	var dbUser models.User
+	errorResponse := map[string]string{"error": ""}
+	err := utils.ParseUser(&user, req)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	result := database.DB.Where("username = ?", user.Username).First(&dbUser)
+	if result.Error != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse["error"] = "Username was not found"
+		response, _ := json.Marshal(errorResponse)
+		fmt.Fprint(w, string(response))
+		return
+	}
+	hasher := sha512.New()
+	hasher.Write([]byte(user.Password + dbUser.Salt))
+	if hex.EncodeToString(hasher.Sum(nil)) == dbUser.Password {
+		response, _ := json.Marshal(map[string]string{
+			"token":        dbUser.Token,
+			"fullname":     dbUser.Fullname,
+			"username":     dbUser.Username,
+			"isSubscribed": strconv.FormatBool(dbUser.IsSubscribed),
+			"profileBio":   dbUser.ProfileBio,
+		})
+		fmt.Fprint(w, string(response))
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse["error"] = "Wrong password"
+		response, _ := json.Marshal(errorResponse)
+		fmt.Fprint(w, string(response))
 	}
 }
 
@@ -150,136 +185,4 @@ func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-}
-
-func Login(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
-	var user models.User
-	var dbUser models.User
-	errorResponse := map[string]string{"error": ""}
-	err := utils.ParseUser(&user, req)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-	}
-	result := database.DB.Where("username = ?", user.Username).First(&dbUser)
-	if result.Error != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		errorResponse["error"] = "Username was not found"
-		response, _ := json.Marshal(errorResponse)
-		fmt.Fprint(w, string(response))
-		return
-	}
-	hasher := sha512.New()
-	hasher.Write([]byte(user.Password + dbUser.Salt))
-	if hex.EncodeToString(hasher.Sum(nil)) == dbUser.Password {
-		response, _ := json.Marshal(map[string]string{
-			"token":        dbUser.Token,
-			"fullname":     dbUser.Fullname,
-			"username":     dbUser.Username,
-			"isSubscribed": strconv.FormatBool(dbUser.IsSubscribed),
-			"profileBio":   dbUser.ProfileBio,
-		})
-		fmt.Fprint(w, string(response))
-	} else {
-		w.WriteHeader(http.StatusBadRequest)
-		errorResponse["error"] = "Wrong password"
-		response, _ := json.Marshal(errorResponse)
-		fmt.Fprint(w, string(response))
-	}
-}
-
-func CheckToken(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
-	var user models.User
-	err := utils.ParseAndAuthenticate(&user, &w, req)
-	if err != nil {
-		return
-	}
-}
-
-func GetUserData(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
-	vars := mux.Vars(req)
-
-	if _, ok := vars["token"]; !ok {
-		// Token not provided
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	user := models.User{Token: vars["token"]}
-
-	if err := utils.AuthenticateToken(&user); err != nil {
-		// Invalid token
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	response, _ := json.Marshal(map[string]string{
-		"username":     user.Username,
-		"fullname":     user.Fullname,
-		"profileBio":   user.ProfileBio,
-		"isSubscribed": strconv.FormatBool(user.IsSubscribed),
-	})
-	fmt.Fprint(w, string(response))
-}
-
-func GetUserProfilePicture(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
-	vars := mux.Vars(req)
-
-	if _, ok := vars["username"]; !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	path, _ := os.Getwd()
-	fileBytes, err := ioutil.ReadFile(path + "/assets/" + vars["username"] + ".png")
-	if err != nil {
-		w.WriteHeader(404)
-		fmt.Println(err.Error())
-		return
-	}
-	w.Write(fileBytes)
-
-}
-
-func GetDefinition(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
-	vars := mux.Vars(req)
-
-	if _, ok := vars["word"]; !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	var word models.Word
-	database.DB.Where("word = ?", vars["word"]).First(&word)
-	if word.Word == "" {
-		// Word wasn't found in database
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, `{"error": "word was not found"}`)
-		return
-	}
-	database.DB.Model(&word).Association("Definitions").Find(&word.Definitions)
-	definitions := make(map[string][]map[string]string)
-
-	for _, element := range word.Definitions {
-		definitions[element.PartOfSpeech] = append(definitions[element.PartOfSpeech], map[string]string{
-			"definition": element.Definition,
-			"example":    element.Example,
-		})
-	}
-	result := make(map[string]interface{})
-	result["word"] = word.Word
-	result["definitions"] = definitions
-	result["phonetics"] = word.Phonetics
-
-	jsonData, _ := json.Marshal(result)
-	fmt.Fprint(w, string(jsonData))
 }
