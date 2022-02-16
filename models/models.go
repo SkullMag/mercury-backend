@@ -40,11 +40,11 @@ type VerificationCode struct {
 }
 
 type Priority struct {
-	ID           int `json:"-"`
-	UserID       int `json:"-"`
-	CollectionID int `json:"-"`
-	WordID       int `json:"-"`
-	Priority     int `json:"priority"`
+	ID               int `json:"-"`
+	UserID           int `json:"-"`
+	CollectionID     int `json:"-"`
+	CollectionWordID int `json:"-"`
+	Priority         int `json:"priority"`
 }
 
 type CollectionWord struct {
@@ -52,6 +52,7 @@ type CollectionWord struct {
 	CollectionID int  `json:"-"`
 	WordID       int  `json:"-"`
 	Word         Word `json:"collectionWord"`
+	Priority     int  `json:"priority" gorm:"-"`
 }
 
 type Collection struct {
