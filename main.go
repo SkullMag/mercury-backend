@@ -20,6 +20,7 @@ func main() {
 	router.HandleFunc("/api/getCollections/{token}/{username}", handlers.GetCollections).Methods("GET")
 	router.HandleFunc("/api/getCollectionWords/{token}/{createdByUsername}/{collectionName}", handlers.GetCollectionWords).Methods("GET")
 	router.HandleFunc("/api/addWordsToCollection/{token}/{collectionName}", handlers.AddWordsToCollection).Methods("POST")
+	router.HandleFunc("/api/getWordsToLearn/{token}/{createdByUsername}/{collectionName}", handlers.GetWordsToLearn).Methods("GET")
 
 	http.ListenAndServe(":8080", router)
 }

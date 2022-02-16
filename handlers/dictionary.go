@@ -122,7 +122,10 @@ func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	database.DB.Preload("Words.Word.Definitions").Where("name = ? and user_id = ?", vars["collectionName"], requestedUser.ID).Find(&collection)
+	res := database.DB.Preload("Words.Word.Definitions").Where("name = ? and user_id = ?", vars["collectionName"], requestedUser.ID).Find(&collection)
+	if res.Error != nil {
+		fmt.Println(res.Error)
+	}
 	if collection.Name == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "Collection was not found"}`)
@@ -133,6 +136,14 @@ func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "Subscribe to see another users collections"}`)
 		return
+	}
+
+	for i := 0; i < len(collection.Words); i++ {
+		var priority models.Priority
+		res := database.DB.Table("priorities").Select("priority").Where("user_id = ? and collection_id = ? and collection_word_id = ?", user.ID, collection.ID, collection.Words[i].ID).Find(&priority)
+		if res.Error == nil {
+			collection.Words[i].Priority = priority.Priority
+		}
 	}
 
 	response, _ := json.Marshal(&collection.Words)
@@ -151,7 +162,12 @@ func AddWordsToCollection(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	database.DB.Preload("Words.Word").Where("name = ? and user_id = ?", vars["collectionName"], user.ID).Find(&collection)
+	res := database.DB.Preload("Words.Word").Where("name = ? and user_id = ?", vars["collectionName"], user.ID).Find(&collection)
+	if res.Error != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Println(res.Error)
+		return
+	}
 	if collection.Name == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "Collection was not found"}`)
@@ -174,16 +190,47 @@ func AddWordsToCollection(w http.ResponseWriter, req *http.Request) {
 			if response.RowsAffected > 0 {
 				collectionWord.CollectionID = collection.ID
 				collectionWord.WordID = dbWord.ID
-
-				priority.UserID = user.ID
-				priority.CollectionID = collection.ID
-				priority.WordID = dbWord.ID
-				priority.Priority = 1
 				if database.DB.Create(&collectionWord).Error != nil {
 					return
 				}
+				priority.UserID = user.ID
+				priority.CollectionID = collection.ID
+				priority.CollectionWordID = collectionWord.ID
+				priority.Priority = 1
 				database.DB.Create(&priority)
 			}
 		}(word)
 	}
+}
+
+func GetWordsToLearn(w http.ResponseWriter, req *http.Request) {
+	utils.EnableCors(&w)
+
+	vars := mux.Vars(req)
+	var user models.User
+	var requestedUser models.User
+	var collection models.Collection
+
+	if status := utils.AuthenticateToken(&w, req, &user, vars["token"]); !status {
+		return
+	}
+
+	database.DB.Where("username = ?", vars["createdByUsername"]).Find(&requestedUser)
+	if requestedUser.Username == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "User was not found"}`)
+		return
+	}
+
+	database.DB.Preload("Words.Word.Definitions").Where("name = ? and user_id = ?", vars["collectionName"], requestedUser.ID).Find(&collection)
+	if collection.Name == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Collection was not found"}`)
+		return
+	}
+
+	var result []string
+	database.DB.Raw("select w.word from priorities p left join collection_words cw on p.collection_word_id = cw.id left join words w on w.id = cw.word_id order by p.priority limit 20").Scan(&result)
+	response, _ := json.Marshal(result)
+	fmt.Fprint(w, string(response))
 }
