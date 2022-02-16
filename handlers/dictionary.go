@@ -49,7 +49,7 @@ func CreateCollection(w http.ResponseWriter, req *http.Request) {
 	var collection models.Collection
 	vars := mux.Vars(req)
 
-	if status := utils.AuthenticateToken(&w, req, &user, vars["token"]); !status {
+	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
 		return
 	}
 
@@ -81,7 +81,7 @@ func GetCollections(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	var user models.User
 
-	if status := utils.AuthenticateToken(&w, req, &user, vars["token"]); !status {
+	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
 		return
 	}
 
@@ -111,14 +111,15 @@ func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
 	var requestedUser models.User
 	var collection models.Collection
 
-	if status := utils.AuthenticateToken(&w, req, &user, vars["token"]); !status {
+	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
 		return
 	}
 
-	database.DB.Where("username = ?", vars["username"]).Find(&requestedUser)
+	database.DB.Where("username = ?", vars["createdByUsername"]).Find(&requestedUser)
 	if requestedUser.Username == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "User was not found"}`)
+		return
 	}
 
 	database.DB.Preload("Words.Word.Definitions").Where("name = ? and user_id = ?", vars["collectionName"], requestedUser.ID).Find(&collection)
@@ -136,4 +137,53 @@ func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
 
 	response, _ := json.Marshal(&collection.Words)
 	fmt.Fprint(w, string(response))
+}
+
+func AddWordsToCollection(w http.ResponseWriter, req *http.Request) {
+	utils.EnableCors(&w)
+
+	vars := mux.Vars(req)
+	var user models.User
+	var collection models.Collection
+	var words []string
+
+	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
+		return
+	}
+
+	database.DB.Preload("Words.Word").Where("name = ? and user_id = ?", vars["collectionName"], user.ID).Find(&collection)
+	if collection.Name == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Collection was not found"}`)
+		return
+	}
+
+	decoder := json.NewDecoder(req.Body)
+	if err := decoder.Decode(&words); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"status": "JSON encoding error"}`)
+		return
+	}
+
+	for _, word := range words {
+		go func(word string) {
+			var dbWord models.Word
+			var collectionWord models.CollectionWord
+			var priority models.Priority
+			response := database.DB.Where("word = ?", word).Find(&dbWord)
+			if response.RowsAffected > 0 {
+				collectionWord.CollectionID = collection.ID
+				collectionWord.WordID = dbWord.ID
+
+				priority.UserID = user.ID
+				priority.CollectionID = collection.ID
+				priority.WordID = dbWord.ID
+				priority.Priority = 1
+				if database.DB.Create(&collectionWord).Error != nil {
+					return
+				}
+				database.DB.Create(&priority)
+			}
+		}(word)
+	}
 }
