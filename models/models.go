@@ -2,10 +2,6 @@ package models
 
 import "encoding/json"
 
-type Tabler interface {
-	TableName() string
-}
-
 type User struct {
 	ID               int
 	Username         string `json:"username"`
@@ -43,12 +39,19 @@ type VerificationCode struct {
 	StartTime int64
 }
 
+type Priority struct {
+	ID           int `json:"-"`
+	UserID       int `json:"-"`
+	CollectionID int `json:"-"`
+	WordID       int `json:"-"`
+	Priority     int `json:"priority"`
+}
+
 type CollectionWord struct {
 	ID           int  `json:"-"`
 	CollectionID int  `json:"-"`
 	WordID       int  `json:"-"`
 	Word         Word `json:"collectionWord"`
-	Priority     int  `json:"priority"`
 }
 
 type Collection struct {
