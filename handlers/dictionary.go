@@ -229,6 +229,12 @@ func GetWordsToLearn(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if user.ID != collection.UserID && !user.IsSubscribed {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Subscribe to see another users collections"}`)
+		return
+	}
+
 	var result []string
 	database.DB.Raw("select w.word from priorities p left join collection_words cw on p.collection_word_id = cw.id left join words w on w.id = cw.word_id order by p.priority limit 20").Scan(&result)
 	response, _ := json.Marshal(result)
