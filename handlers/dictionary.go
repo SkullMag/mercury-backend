@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"gorm.io/gorm/clause"
 )
 
 func GetDefinition(w http.ResponseWriter, req *http.Request) {
@@ -150,7 +151,7 @@ func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(w, string(response))
 }
 
-func AddWordsToCollection(w http.ResponseWriter, req *http.Request) {
+func AddWordToCollection(w http.ResponseWriter, req *http.Request) {
 	utils.EnableCors(&w)
 
 	vars := mux.Vars(req)
@@ -162,7 +163,7 @@ func AddWordsToCollection(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	res := database.DB.Preload("Words.Word").Where("name = ? and user_id = ?", vars["collectionName"], user.ID).Find(&collection)
+	res := database.DB.Where("name = ? and user_id = ?", vars["collectionName"], user.ID).Find(&collection)
 	if res.Error != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Println(res.Error)
@@ -181,26 +182,61 @@ func AddWordsToCollection(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	for _, word := range words {
-		go func(word string) {
-			var dbWord models.Word
-			var collectionWord models.CollectionWord
-			var priority models.Priority
-			response := database.DB.Where("word = ?", word).Find(&dbWord)
-			if response.RowsAffected > 0 {
-				collectionWord.CollectionID = collection.ID
-				collectionWord.WordID = dbWord.ID
-				if database.DB.Create(&collectionWord).Error != nil {
-					return
-				}
-				priority.UserID = user.ID
-				priority.CollectionID = collection.ID
-				priority.CollectionWordID = collectionWord.ID
-				priority.Priority = 1
-				database.DB.Create(&priority)
-			}
-		}(word)
+	var dbWord models.Word
+	var collectionWord models.CollectionWord
+	var priority models.Priority
+	response := database.DB.Where("word = ?", vars["word"]).Find(&dbWord)
+	if response.RowsAffected > 0 {
+		collectionWord.CollectionID = collection.ID
+		collectionWord.WordID = dbWord.ID
+		if database.DB.Create(&collectionWord).Error != nil {
+			return
+		}
+		priority.UserID = user.ID
+		priority.CollectionID = collection.ID
+		priority.CollectionWordID = collectionWord.ID
+		priority.Priority = 1
+		database.DB.Create(&priority)
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Word was not found in dictionary"}`)
 	}
+}
+
+func DeleteWordsFromCollection(w http.ResponseWriter, req *http.Request) {
+	utils.EnableCors(&w)
+
+	vars := mux.Vars(req)
+	var user models.User
+	var collection models.Collection
+
+	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
+		return
+	}
+
+	if database.DB.Where("name = ? and user_id = ?", vars["collectionName"], user.ID).Find(&collection).RowsAffected == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "No collection with specified name was found"}`)
+		return
+	}
+
+	var words []string
+	decoder := json.NewDecoder(req.Body)
+	if decoder.Decode(&words) != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "JSON decoding error"}`)
+		return
+	}
+
+	for _, word := range words {
+		var wordID int
+		var collectionWord models.CollectionWord
+
+		database.DB.Table("words").Select("id").Where("word = ?", word).Find(&wordID)
+		database.DB.Clauses(clause.Returning{}).Where("word_id = ? and collection_id = ?", wordID, collection.ID).Delete(&collectionWord)
+		database.DB.Where("collection_id = ? and collection_word_id = ?", collection.ID, collectionWord.ID).Delete(models.Priority{})
+	}
+
 }
 
 func GetWordsToLearn(w http.ResponseWriter, req *http.Request) {
