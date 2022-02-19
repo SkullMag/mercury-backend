@@ -60,8 +60,9 @@ type Collection struct {
 	Name      string           `json:"name"`
 	Words     []CollectionWord `json:"-"`
 	UserID    int              `json:"-"`
+	User      User             `json:"username"`
 	Likes     int              `json:"likes"`
-	WordCount int              `json:"wordCount"`
+	WordCount int              `json:"wordCount" gorm:"-"`
 }
 
 func (c Collection) MarshalJSON() ([]byte, error) {
@@ -69,9 +70,11 @@ func (c Collection) MarshalJSON() ([]byte, error) {
 		Name      string `json:"name"`
 		Likes     int    `json:"likes"`
 		WordCount int    `json:"wordCount"`
+		Username  string `json:"username"`
 	}{
 		Name:      c.Name,
 		Likes:     c.Likes,
 		WordCount: len(c.Words),
+		Username:  c.User.Username,
 	})
 }
