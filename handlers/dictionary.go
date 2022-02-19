@@ -13,8 +13,6 @@ import (
 )
 
 func GetDefinition(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
 	vars := mux.Vars(req)
 
 	var word models.Word
@@ -44,8 +42,6 @@ func GetDefinition(w http.ResponseWriter, req *http.Request) {
 }
 
 func CreateCollection(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
 	var user models.User
 	var collection models.Collection
 	vars := mux.Vars(req)
@@ -77,8 +73,6 @@ func CreateCollection(w http.ResponseWriter, req *http.Request) {
 }
 
 func GetCollections(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
 	vars := mux.Vars(req)
 	var user models.User
 
@@ -105,8 +99,6 @@ func GetCollections(w http.ResponseWriter, req *http.Request) {
 }
 
 func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
 	vars := mux.Vars(req)
 	var user models.User
 	var requestedUser models.User
@@ -139,13 +131,6 @@ func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// for i := 0; i < len(collection.Words); i++ {
-	// 	var priority models.Priority
-	// 	res := database.DB.Table("priorities").Select("priority").Where("user_id = ? and collection_id = ? and collection_word_id = ?", user.ID, collection.ID, collection.Words[i].ID).Find(&priority)
-	// 	if res.Error == nil {
-	// 		collection.Words[i].Priority = priority.Priority
-	// 	}
-	// }
 	var wordsToReturn []map[string]interface{}
 	for _, word := range collection.Words {
 		definitions := make(map[string][]map[string]string)
@@ -168,8 +153,6 @@ func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
 }
 
 func AddWordToCollection(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
 	vars := mux.Vars(req)
 	var user models.User
 	var collection models.Collection
@@ -220,8 +203,6 @@ func AddWordToCollection(w http.ResponseWriter, req *http.Request) {
 }
 
 func DeleteWordsFromCollection(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
 	vars := mux.Vars(req)
 	var user models.User
 	var collection models.Collection
@@ -256,8 +237,6 @@ func DeleteWordsFromCollection(w http.ResponseWriter, req *http.Request) {
 }
 
 func GetWordsToLearn(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
 	vars := mux.Vars(req)
 	var user models.User
 	var requestedUser models.User

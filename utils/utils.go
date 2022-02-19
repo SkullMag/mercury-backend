@@ -69,10 +69,6 @@ func MailVerificationCode(code string, email string) error {
 	return nil
 }
 
-func EnableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
-
 func ParseUser(user *models.User, req *http.Request) error {
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(user)

@@ -4,6 +4,7 @@ import (
 	"mercury/handlers"
 	"net/http"
 
+	gorillaHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -23,5 +24,6 @@ func main() {
 	router.HandleFunc("/api/deleteWordsFromCollection/{token}/{collectionName}", handlers.DeleteWordsFromCollection).Methods("POST")
 	router.HandleFunc("/api/getWordsToLearn/{token}/{createdByUsername}/{collectionName}", handlers.GetWordsToLearn).Methods("GET")
 
-	http.ListenAndServe(":8080", router)
+	origins := gorillaHandlers.AllowedOrigins([]string{"*"})
+	http.ListenAndServe(":8080", gorillaHandlers.CORS(origins)(router))
 }

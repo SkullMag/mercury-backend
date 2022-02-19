@@ -18,8 +18,6 @@ import (
 )
 
 func SignUp(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
 	errorResponse := map[string]string{"error": ""}
 	var user models.User
 	var verificationCode models.VerificationCode
@@ -88,8 +86,6 @@ func SignUp(w http.ResponseWriter, req *http.Request) {
 }
 
 func Login(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
 	var user models.User
 	var dbUser models.User
 	errorResponse := map[string]string{"error": ""}
@@ -126,8 +122,6 @@ func Login(w http.ResponseWriter, req *http.Request) {
 }
 
 func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
 	var verificationCode models.VerificationCode
 	var tempUser models.User
 

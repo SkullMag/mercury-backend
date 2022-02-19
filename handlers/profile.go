@@ -14,8 +14,6 @@ import (
 )
 
 func GetUserData(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
 	vars := mux.Vars(req)
 	var user models.User
 
@@ -33,8 +31,6 @@ func GetUserData(w http.ResponseWriter, req *http.Request) {
 }
 
 func GetUserProfilePicture(w http.ResponseWriter, req *http.Request) {
-	utils.EnableCors(&w)
-
 	vars := mux.Vars(req)
 
 	path, _ := os.Getwd()
