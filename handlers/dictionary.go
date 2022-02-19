@@ -86,7 +86,7 @@ func GetCollections(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	database.DB.Preload("Collections.Words").Where("username = ?", vars["username"]).Find(&user)
+	database.DB.Preload("Collections.Words").Preload("Collections.User").Where("username = ?", vars["username"]).Find(&user)
 	if user.Username == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "User was not found"}`)
@@ -139,15 +139,31 @@ func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	for i := 0; i < len(collection.Words); i++ {
-		var priority models.Priority
-		res := database.DB.Table("priorities").Select("priority").Where("user_id = ? and collection_id = ? and collection_word_id = ?", user.ID, collection.ID, collection.Words[i].ID).Find(&priority)
-		if res.Error == nil {
-			collection.Words[i].Priority = priority.Priority
+	// for i := 0; i < len(collection.Words); i++ {
+	// 	var priority models.Priority
+	// 	res := database.DB.Table("priorities").Select("priority").Where("user_id = ? and collection_id = ? and collection_word_id = ?", user.ID, collection.ID, collection.Words[i].ID).Find(&priority)
+	// 	if res.Error == nil {
+	// 		collection.Words[i].Priority = priority.Priority
+	// 	}
+	// }
+	var wordsToReturn []map[string]interface{}
+	for _, word := range collection.Words {
+		definitions := make(map[string][]map[string]string)
+
+		for _, element := range word.Word.Definitions {
+			definitions[element.PartOfSpeech] = append(definitions[element.PartOfSpeech], map[string]string{
+				"definition": element.Definition,
+				"example":    element.Example,
+			})
 		}
+		result := make(map[string]interface{})
+		result["word"] = word.Word.Word
+		result["definitions"] = definitions
+		result["phonetics"] = word.Word.Phonetics
+		wordsToReturn = append(wordsToReturn, result)
 	}
 
-	response, _ := json.Marshal(&collection.Words)
+	response, _ := json.Marshal(wordsToReturn)
 	fmt.Fprint(w, string(response))
 }
 
@@ -275,4 +291,8 @@ func GetWordsToLearn(w http.ResponseWriter, req *http.Request) {
 	database.DB.Raw("select w.word from priorities p left join collection_words cw on p.collection_word_id = cw.id left join words w on w.id = cw.word_id order by p.priority limit 20").Scan(&result)
 	response, _ := json.Marshal(result)
 	fmt.Fprint(w, string(response))
+}
+
+func LearnWords(w http.ResponseWriter, req *http.Request) {
+
 }
