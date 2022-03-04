@@ -69,34 +69,18 @@ func MailVerificationCode(code string, email string) error {
 	return nil
 }
 
-func EnableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
-
 func ParseUser(user *models.User, req *http.Request) error {
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(user)
 	return err
 }
 
-func AuthenticateToken(user *models.User) error {
-	result := database.DB.Table("users").Where("token = ?", user.Token).First(user)
-	return result.Error
-}
-
-func ParseAndAuthenticate(user *models.User, w *http.ResponseWriter, req *http.Request) error {
-	err := ParseUser(user, req)
-	if err != nil {
+func AuthenticateToken(w *http.ResponseWriter, req *http.Request, user *models.User, token string) bool {
+	result := database.DB.Table("users").Where("token = ?", token).First(user)
+	if result.RowsAffected == 0 || result.Error != nil {
 		(*w).WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(*w, "{\"error\": \"error occurred while parsing input data\"}")
-		return err
+		fmt.Fprint(*w, `{"error": "Invalid token"}`)
+		return false
 	}
-
-	isAuth := AuthenticateToken(user)
-	if isAuth != nil {
-		(*w).WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(*w, "{\"error\": \"invalid token\"}")
-		return isAuth
-	}
-	return nil
+	return true
 }
