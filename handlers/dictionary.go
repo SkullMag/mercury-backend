@@ -7,6 +7,7 @@ import (
 	"mercury/models"
 	"mercury/utils"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"gorm.io/gorm/clause"
@@ -66,7 +67,7 @@ func CreateCollection(w http.ResponseWriter, req *http.Request) {
 	}
 
 	database.DB.Create(&models.Collection{
-		Name:   vars["name"],
+		Name:   strings.ToLower(vars["name"]),
 		UserID: user.ID,
 	})
 
@@ -156,7 +157,6 @@ func AddWordToCollection(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	var user models.User
 	var collection models.Collection
-	var words []string
 
 	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
 		return
@@ -174,21 +174,22 @@ func AddWordToCollection(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	decoder := json.NewDecoder(req.Body)
-	if err := decoder.Decode(&words); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `{"status": "JSON encoding error"}`)
-		return
-	}
+	// decoder := json.NewDecoder(req.Body)
+	// if err := decoder.Decode(&words); err != nil {
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	fmt.Fprint(w, `{"status": "JSON encoding error"}`)
+	// 	return
+	// }
 
 	var dbWord models.Word
 	var collectionWord models.CollectionWord
 	var priority models.Priority
-	response := database.DB.Where("word = ?", vars["word"]).Find(&dbWord)
+	response := database.DB.Where("word = ?", strings.ToLower(vars["word"])).Find(&dbWord)
 	if response.RowsAffected > 0 {
 		collectionWord.CollectionID = collection.ID
 		collectionWord.WordID = dbWord.ID
-		if database.DB.Create(&collectionWord).Error != nil {
+		if err := database.DB.Create(&collectionWord).Error; err != nil {
+			fmt.Println(err.Error())
 			return
 		}
 		priority.UserID = user.ID
