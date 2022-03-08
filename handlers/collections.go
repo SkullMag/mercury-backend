@@ -30,7 +30,7 @@ func CreateCollection(w http.ResponseWriter, req *http.Request) {
 
 	// Better to handle this with the unique constraint
 	// to reduce number of database requests
-	database.DB.Select("name").Where("user_id = ? and name = ?", user.ID, vars["name"]).Find(&collection)
+	database.DB.Select("name").Where("user_id = ? and name = ?", user.ID, strings.ToLower(vars["name"])).Find(&collection)
 	if collection.Name != "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "You've already created a collection with this name"}`)
@@ -87,7 +87,7 @@ func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	res := database.DB.Preload("Words.Word.Definitions").Where("name = ? and user_id = ?", vars["collectionName"], requestedUser.ID).Find(&collection)
+	res := database.DB.Preload("Words.Word.Definitions").Where("name = ? and user_id = ?", strings.ToLower(vars["collectionName"]), requestedUser.ID).Find(&collection)
 	if res.Error != nil {
 		fmt.Println(res.Error)
 	}
@@ -133,7 +133,7 @@ func AddWordToCollection(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	res := database.DB.Where("name = ? and user_id = ?", vars["collectionName"], user.ID).Find(&collection)
+	res := database.DB.Where("name = ? and user_id = ?", strings.ToLower(vars["collectionName"]), user.ID).Find(&collection)
 	if res.Error != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Println(res.Error)
@@ -183,7 +183,7 @@ func DeleteWordsFromCollection(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if database.DB.Where("name = ? and user_id = ?", vars["collectionName"], user.ID).Find(&collection).RowsAffected == 0 {
+	if database.DB.Where("name = ? and user_id = ?", strings.ToLower(vars["collectionName"]), user.ID).Find(&collection).RowsAffected == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "No collection with specified name was found"}`)
 		return
@@ -208,6 +208,24 @@ func DeleteWordsFromCollection(w http.ResponseWriter, req *http.Request) {
 
 }
 
+func DeleteCollection(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	var user models.User
+	var collection models.Collection
+
+	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
+		return
+	}
+
+	if database.DB.Where("name = ? and user_id = ?", strings.ToLower(vars["name"]), user.ID).Find(&collection).RowsAffected == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Collection wasn't found"}`)
+		return
+	}
+
+	database.DB.Delete(collection)
+}
+
 func GetWordsToLearn(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	var user models.User
@@ -225,7 +243,7 @@ func GetWordsToLearn(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	database.DB.Preload("Words.Word.Definitions").Where("name = ? and user_id = ?", vars["collectionName"], requestedUser.ID).Find(&collection)
+	database.DB.Preload("Words.Word.Definitions").Where("name = ? and user_id = ?", strings.ToLower(vars["collectionName"]), requestedUser.ID).Find(&collection)
 	if collection.Name == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "Collection was not found"}`)

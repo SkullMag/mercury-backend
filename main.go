@@ -18,6 +18,7 @@ func main() {
 	router.HandleFunc("/api/definition/{word}", handlers.GetDefinition).Methods("GET")
 	router.HandleFunc("/api/requestVerificationCode/{username}/{email}", handlers.RequestVerificationCode).Methods("GET")
 	router.HandleFunc("/api/createCollection/{token}/{name}", handlers.CreateCollection).Methods("POST")
+	router.HandleFunc("/api/deleteCollection/{token}/{name}", handlers.DeleteCollection).Methods("POST")
 	router.HandleFunc("/api/getCollections/{token}/{username}", handlers.GetCollections).Methods("GET")
 	router.HandleFunc("/api/getCollectionWords/{token}/{createdByUsername}/{collectionName}", handlers.GetCollectionWords).Methods("GET")
 	router.HandleFunc("/api/addWordToCollection/{token}/{collectionName}/{word}", handlers.AddWordToCollection).Methods("POST")
