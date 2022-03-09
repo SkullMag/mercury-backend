@@ -46,6 +46,7 @@ func CreateCollection(w http.ResponseWriter, req *http.Request) {
 func DeleteCollection(w http.ResponseWriter, req *http.Request) {
 	var user models.User
 	var collection models.Collection
+	var collectionWords []models.CollectionWord
 	vars := mux.Vars(req)
 
 	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
@@ -58,6 +59,9 @@ func DeleteCollection(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprint(w, `{"error": "No collection with specified name was found"}`)
 		return
 	}
+
+	database.DB.Where("collection_id = ?", collection.ID).Find(&collectionWords)
+	database.DB.Delete(&collectionWords)
 	database.DB.Delete(&collection)
 }
 
