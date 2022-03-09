@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"gorm.io/gorm/clause"
 )
 
 func CreateCollection(w http.ResponseWriter, req *http.Request) {
@@ -42,6 +41,24 @@ func CreateCollection(w http.ResponseWriter, req *http.Request) {
 		UserID: user.ID,
 	})
 
+}
+
+func DeleteCollection(w http.ResponseWriter, req *http.Request) {
+	var user models.User
+	var collection models.Collection
+	vars := mux.Vars(req)
+
+	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
+		return
+	}
+
+	result := database.DB.Where("name = ? and user_id = ?", strings.ToLower(vars["collectionName"]), user.ID).Find(&collection)
+	if result.RowsAffected == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "No collection with specified name was found"}`)
+		return
+	}
+	database.DB.Delete(&collection)
 }
 
 func GetCollections(w http.ResponseWriter, req *http.Request) {
@@ -174,57 +191,71 @@ func AddWordToCollection(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func DeleteWordsFromCollection(w http.ResponseWriter, req *http.Request) {
+func DeleteCollectionWord(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	var user models.User
+	var word models.Word
 	var collection models.Collection
+	var collectionWord models.CollectionWord
 
 	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
 		return
 	}
 
-	if database.DB.Where("name = ? and user_id = ?", strings.ToLower(vars["collectionName"]), user.ID).Find(&collection).RowsAffected == 0 {
+	if res := database.DB.Where("word = ?", strings.ToLower(vars["word"])).Find(&word); res.RowsAffected == 0 {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `{"error": "No collection with specified name was found"}`)
+		fmt.Fprint(w, `{"error": "Word was not found"}`)
 		return
 	}
 
-	var words []string
-	decoder := json.NewDecoder(req.Body)
-	if decoder.Decode(&words) != nil {
+	if res := database.DB.Where("name = ? and user_id = ?", strings.ToLower(vars["collectionName"]), user.ID).Find(&collection); res.RowsAffected == 0 {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `{"error": "JSON decoding error"}`)
+		fmt.Fprint(w, `{"error": "Collection was not found"}`)
 		return
 	}
 
-	for _, word := range words {
-		var wordID int
-		var collectionWord models.CollectionWord
-
-		database.DB.Table("words").Select("id").Where("word = ?", word).Find(&wordID)
-		database.DB.Clauses(clause.Returning{}).Where("word_id = ? and collection_id = ?", wordID, collection.ID).Delete(&collectionWord)
-		database.DB.Where("collection_id = ? and collection_word_id = ?", collection.ID, collectionWord.ID).Delete(models.Priority{})
+	if res := database.DB.Where("word_id = ? and collection_id = ?", word.ID, collection.ID).Find(&collectionWord); res.RowsAffected == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Word is not in collection"}`)
+		return
 	}
 
+	database.DB.Delete(&collectionWord)
 }
 
-func DeleteCollection(w http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
-	var user models.User
-	var collection models.Collection
+// func DeleteWordsFromCollection(w http.ResponseWriter, req *http.Request) {
+// 	vars := mux.Vars(req)
+// 	var user models.User
+// 	var collection models.Collection
 
-	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
-		return
-	}
+// 	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
+// 		return
+// 	}
 
-	if database.DB.Where("name = ? and user_id = ?", strings.ToLower(vars["name"]), user.ID).Find(&collection).RowsAffected == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `{"error": "Collection wasn't found"}`)
-		return
-	}
+// 	if database.DB.Where("name = ? and user_id = ?", vars["collectionName"], user.ID).Find(&collection).RowsAffected == 0 {
+// 		w.WriteHeader(http.StatusBadRequest)
+// 		fmt.Fprint(w, `{"error": "No collection with specified name was found"}`)
+// 		return
+// 	}
 
-	database.DB.Delete(collection)
-}
+// 	var words []string
+// 	decoder := json.NewDecoder(req.Body)
+// 	if decoder.Decode(&words) != nil {
+// 		w.WriteHeader(http.StatusBadRequest)
+// 		fmt.Fprint(w, `{"error": "JSON decoding error"}`)
+// 		return
+// 	}
+
+// 	for _, word := range words {
+// 		var wordID int
+// 		var collectionWord models.CollectionWord
+
+// 		database.DB.Table("words").Select("id").Where("word = ?", word).Find(&wordID)
+// 		database.DB.Clauses(clause.Returning{}).Where("word_id = ? and collection_id = ?", wordID, collection.ID).Delete(&collectionWord)
+// 		database.DB.Where("collection_id = ? and collection_word_id = ?", collection.ID, collectionWord.ID).Delete(models.Priority{})
+// 	}
+
+// }
 
 func GetWordsToLearn(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
