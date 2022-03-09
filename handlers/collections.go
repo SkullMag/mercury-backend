@@ -47,6 +47,7 @@ func DeleteCollection(w http.ResponseWriter, req *http.Request) {
 	var user models.User
 	var collection models.Collection
 	var collectionWords []models.CollectionWord
+	var priorities []models.Priority
 	vars := mux.Vars(req)
 
 	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
@@ -61,7 +62,9 @@ func DeleteCollection(w http.ResponseWriter, req *http.Request) {
 	}
 
 	database.DB.Where("collection_id = ?", collection.ID).Find(&collectionWords)
+	database.DB.Where("collection_id = ? and user_id = ?", collection.ID, user.ID).Find(&priorities)
 	database.DB.Delete(&collectionWords)
+	database.DB.Delete(&priorities)
 	database.DB.Delete(&collection)
 }
 
@@ -187,7 +190,7 @@ func AddWordToCollection(w http.ResponseWriter, req *http.Request) {
 		priority.UserID = user.ID
 		priority.CollectionID = collection.ID
 		priority.CollectionWordID = collectionWord.ID
-		priority.Priority = 1
+		priority.Priority = 0
 		database.DB.Create(&priority)
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
@@ -201,6 +204,7 @@ func DeleteCollectionWord(w http.ResponseWriter, req *http.Request) {
 	var word models.Word
 	var collection models.Collection
 	var collectionWord models.CollectionWord
+	var priorities []models.Priority
 
 	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
 		return
@@ -224,5 +228,8 @@ func DeleteCollectionWord(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	database.DB.Where("collection_word_id = ? and collection_id = ? and user_id = ?", collectionWord.ID, collection.ID, user.ID).Find(&priorities)
+
+	database.DB.Delete(&priorities)
 	database.DB.Delete(&collectionWord)
 }
