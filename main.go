@@ -25,6 +25,7 @@ func main() {
 	router.HandleFunc("/api/deleteCollectionWord/{token}/{collectionName}/{word}", handlers.DeleteCollectionWord).Methods("POST")
 	// router.HandleFunc("/api/deleteWordsFromCollection/{token}/{collectionName}", handlers.DeleteWordsFromCollection).Methods("POST")
 	router.HandleFunc("/api/getWordsToLearn/{token}/{createdByUsername}/{collectionName}", handlers.GetWordsToLearn).Methods("GET")
+	router.HandleFunc("/api/learnWords/{token}/{collectionName}", handlers.LearnWords).Methods("POST")
 
 	origins := gorillaHandlers.AllowedOrigins([]string{"*"})
 	http.ListenAndServe(":8080", gorillaHandlers.CORS(origins)(router))
