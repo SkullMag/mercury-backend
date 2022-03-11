@@ -10,6 +10,7 @@ import (
 	"mercury/database"
 	"mercury/models"
 	"net/http"
+	"sort"
 	"strings"
 
 	gomail "gopkg.in/gomail.v2"
@@ -83,4 +84,30 @@ func AuthenticateToken(w *http.ResponseWriter, req *http.Request, user *models.U
 		return false
 	}
 	return true
+}
+
+func GenerateWordsJSON(words []models.CollectionWord, user models.User) []map[string]interface{} {
+	var wordsToReturn []map[string]interface{}
+	for _, word := range words {
+		definitions := make(map[string][]map[string]string)
+
+		for _, element := range word.Word.Definitions {
+			definitions[element.PartOfSpeech] = append(definitions[element.PartOfSpeech], map[string]string{
+				"definition": element.Definition,
+				"example":    element.Example,
+			})
+		}
+		var priority models.Priority
+		database.DB.Model(&models.Priority{}).Where("collection_word_id = ? and user_id = ?", word.ID, user.ID).Select("priority").Find(&priority)
+		result := make(map[string]interface{})
+		result["word"] = word.Word.Word
+		result["definitions"] = definitions
+		result["phonetics"] = word.Word.Phonetics
+		result["priority"] = priority.Priority
+		wordsToReturn = append(wordsToReturn, result)
+	}
+	sort.Slice(wordsToReturn, func(i, j int) bool {
+		return wordsToReturn[i]["priority"].(int) < wordsToReturn[j]["priority"].(int)
+	})
+	return wordsToReturn
 }
