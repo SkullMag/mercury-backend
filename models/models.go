@@ -40,11 +40,12 @@ type VerificationCode struct {
 }
 
 type Priority struct {
-	ID               int `json:"-"`
-	UserID           int `json:"-"`
-	CollectionID     int `json:"-"`
-	CollectionWordID int `json:"-"`
-	Priority         int `json:"priority"`
+	ID               int            `json:"-"`
+	UserID           int            `json:"-"`
+	CollectionID     int            `json:"-"`
+	CollectionWordID int            `json:"-"`
+	Priority         int            `json:"priority"`
+	CollectionWord   CollectionWord `gorm:"foreignKey:CollectionWordID"`
 }
 
 type CollectionWord struct {
