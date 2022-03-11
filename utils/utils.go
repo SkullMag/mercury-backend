@@ -10,6 +10,7 @@ import (
 	"mercury/database"
 	"mercury/models"
 	"net/http"
+	"sort"
 	"strings"
 
 	gomail "gopkg.in/gomail.v2"
@@ -105,5 +106,8 @@ func GenerateWordsJSON(words []models.CollectionWord, user models.User) []map[st
 		result["priority"] = priority.Priority
 		wordsToReturn = append(wordsToReturn, result)
 	}
+	sort.Slice(wordsToReturn, func(i, j int) bool {
+		return wordsToReturn[i]["priority"].(int) < wordsToReturn[j]["priority"].(int)
+	})
 	return wordsToReturn
 }
