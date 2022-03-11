@@ -84,3 +84,26 @@ func AuthenticateToken(w *http.ResponseWriter, req *http.Request, user *models.U
 	}
 	return true
 }
+
+func GenerateWordsJSON(words []models.CollectionWord, user models.User) []map[string]interface{} {
+	var wordsToReturn []map[string]interface{}
+	for _, word := range words {
+		definitions := make(map[string][]map[string]string)
+
+		for _, element := range word.Word.Definitions {
+			definitions[element.PartOfSpeech] = append(definitions[element.PartOfSpeech], map[string]string{
+				"definition": element.Definition,
+				"example":    element.Example,
+			})
+		}
+		var priority models.Priority
+		database.DB.Model(&models.Priority{}).Where("collection_word_id = ? and user_id = ?", word.ID, user.ID).Select("priority").Find(&priority)
+		result := make(map[string]interface{})
+		result["word"] = word.Word.Word
+		result["definitions"] = definitions
+		result["phonetics"] = word.Word.Phonetics
+		result["priority"] = priority.Priority
+		wordsToReturn = append(wordsToReturn, result)
+	}
+	return wordsToReturn
+}

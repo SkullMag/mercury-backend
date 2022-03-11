@@ -126,23 +126,7 @@ func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprint(w, `{"error": "Subscribe to see another users collections"}`)
 		return
 	}
-
-	var wordsToReturn []map[string]interface{}
-	for _, word := range collection.Words {
-		definitions := make(map[string][]map[string]string)
-
-		for _, element := range word.Word.Definitions {
-			definitions[element.PartOfSpeech] = append(definitions[element.PartOfSpeech], map[string]string{
-				"definition": element.Definition,
-				"example":    element.Example,
-			})
-		}
-		result := make(map[string]interface{})
-		result["word"] = word.Word.Word
-		result["definitions"] = definitions
-		result["phonetics"] = word.Word.Phonetics
-		wordsToReturn = append(wordsToReturn, result)
-	}
+	wordsToReturn := utils.GenerateWordsJSON(collection.Words, user)
 
 	response, _ := json.Marshal(wordsToReturn)
 	fmt.Fprint(w, string(response))
