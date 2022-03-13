@@ -174,7 +174,8 @@ func AddWordToCollection(w http.ResponseWriter, req *http.Request) {
 		priority.UserID = user.ID
 		priority.CollectionID = collection.ID
 		priority.CollectionWordID = collectionWord.ID
-		priority.Priority = 0
+		// Newly added words can have priority 0 | 1
+		priority.Priority = 1
 		database.DB.Create(&priority)
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
