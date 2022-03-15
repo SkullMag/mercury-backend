@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"mercury/constants"
 	"mercury/database"
 	"mercury/models"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 
@@ -56,13 +56,15 @@ func GenerateVerificationCode() (string, error) {
 
 func MailVerificationCode(code string, email string) error {
 	m := gomail.NewMessage()
+	fromEmail, _ := os.LookupEnv("EMAIL")
+	password, _ := os.LookupEnv("EMAIL_PASSWORD")
 
-	m.SetHeader("From", constants.Email)
+	m.SetHeader("From", fromEmail)
 	m.SetHeader("To", email)
 	m.SetHeader("Subject", "Verification code")
 	m.SetBody("text/plain", "Your verification code for Mercury: "+code)
 
-	d := gomail.NewDialer("smtp.gmail.com", 587, constants.Email, constants.EmailPassword)
+	d := gomail.NewDialer("smtp.gmail.com", 587, fromEmail, password)
 
 	if err := d.DialAndSend(m); err != nil {
 		return err
