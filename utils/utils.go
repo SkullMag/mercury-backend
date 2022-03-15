@@ -56,8 +56,8 @@ func GenerateVerificationCode() (string, error) {
 
 func MailVerificationCode(code string, email string) error {
 	m := gomail.NewMessage()
-	fromEmail, _ := os.LookupEnv("EMAIL")
-	password, _ := os.LookupEnv("EMAIL_PASSWORD")
+	fromEmail := os.Getenv("EMAIL")
+	password := os.Getenv("EMAIL_PASSWORD")
 
 	m.SetHeader("From", fromEmail)
 	m.SetHeader("To", email)

@@ -32,5 +32,5 @@ func main() {
 	}
 
 	origins := gorillaHandlers.AllowedOrigins([]string{"*"})
-	http.ListenAndServe(":80", gorillaHandlers.CORS(origins)(router))
+	http.ListenAndServe(os.Getenv("PORT"), gorillaHandlers.CORS(origins)(router))
 }
