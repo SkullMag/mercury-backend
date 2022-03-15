@@ -169,11 +169,12 @@ func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
 		verificationCode.StartTime = time.Now().Unix()
 		verificationCode.Attempts = 0
 		verificationCode.Code = code
-		database.DB.Save(&verificationCode)
 		mailError := utils.MailVerificationCode(verificationCode.Code, verificationCode.Email)
 		if mailError != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(w, `{"error": "Try to resend token"}`)
+		} else {
+			database.DB.Save(&verificationCode)
 		}
 	}
 
