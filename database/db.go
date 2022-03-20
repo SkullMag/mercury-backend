@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -20,4 +20,4 @@ var newLogger = logger.New(
 	},
 )
 
-var DB, _ = gorm.Open(sqlite.Open("mercury.db"), &gorm.Config{Logger: newLogger})
+var DB, _ = gorm.Open(postgres.Open(os.Getenv("POSTGRES_URL")), &gorm.Config{Logger: newLogger})
