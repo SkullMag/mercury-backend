@@ -64,7 +64,7 @@ func MailVerificationCode(code string, email string) error {
 	m.SetHeader("Subject", "Verification code")
 	m.SetBody("text/plain", "Your verification code for Mercury: "+code)
 
-	d := gomail.NewDialer("smtp.gmail.com", 587, fromEmail, password)
+	d := gomail.NewDialer("smtp.yandex.ru", 587, fromEmail, password)
 
 	if err := d.DialAndSend(m); err != nil {
 		return err
