@@ -30,7 +30,7 @@ func GetDefinition(w http.ResponseWriter, req *http.Request) {
 			"example":    element.Example,
 		})
 	}
-	result := make(map[string]interface{})
+	result := make(map[string]any)
 	result["word"] = word.Word
 	result["definitions"] = definitions
 	result["phonetics"] = word.Phonetics
