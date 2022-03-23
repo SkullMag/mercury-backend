@@ -46,7 +46,11 @@ func LearnWords(w http.ResponseWriter, req *http.Request) {
 			continue
 		}
 		if res := database.DB.Where("collection_id = ? and collection_word_id = ? and user_id = ?", collection.ID, collectionWord.ID, user.ID).Find(&priority); res.RowsAffected == 0 {
-			continue
+			priority.UserID = user.ID
+			priority.CollectionID = collection.ID
+			priority.CollectionWordID = collectionWord.ID
+			priority.Priority = 1
+			database.DB.Create(&priority)
 		}
 
 		if word["status"] == "true" {
