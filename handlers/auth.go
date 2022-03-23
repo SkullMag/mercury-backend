@@ -153,8 +153,7 @@ func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
 		verificationCode.StartTime = time.Now().Unix()
 		verificationCode.Attempts = 0
 		database.DB.Create(&verificationCode)
-		mailError := utils.MailVerificationCode(verificationCode.Code, verificationCode.Email)
-		fmt.Fprint(w, mailError)
+		utils.MailVerificationCode(verificationCode.Code, verificationCode.Email)
 	} else {
 		diff := time.Since(time.Unix(verificationCode.StartTime, 0))
 		if diff.Seconds() < 60.0 {
