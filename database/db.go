@@ -16,7 +16,7 @@ var newLogger = logger.New(
 		SlowThreshold:             time.Second, // Slow SQL threshold
 		LogLevel:                  logger.Info, // Log level
 		IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
-		Colorful:                  false,       // Disable color
+		Colorful:                  true,        // Enable color
 	},
 )
 
