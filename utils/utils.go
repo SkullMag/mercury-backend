@@ -59,12 +59,12 @@ func MailVerificationCode(code string, email string) error {
 	fromEmail := os.Getenv("EMAIL")
 	password := os.Getenv("EMAIL_PASSWORD")
 
-	m.SetHeader("From", fromEmail)
+	m.SetHeader("From", fromEmail+"@yandex.ru")
 	m.SetHeader("To", email)
 	m.SetHeader("Subject", "Verification code")
 	m.SetBody("text/plain", "Your verification code for Mercury: "+code)
 
-	d := gomail.NewDialer("smtp.yandex.ru", 587, fromEmail, password)
+	d := gomail.NewDialer("smtp.yandex.ru", 465, fromEmail, password)
 
 	if err := d.DialAndSend(m); err != nil {
 		return err
