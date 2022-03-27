@@ -32,5 +32,5 @@ func main() {
 	}
 
 	origins := gorillaHandlers.AllowedOrigins([]string{"*"})
-	http.ListenAndServeTLS(":"+os.Getenv("PORT"), "/etc/ssl/mercurydict.com.crt", "/etc/ssl/mercurydict.com.key", gorillaHandlers.CORS(origins)(router))
+	http.ListenAndServeTLS(":"+os.Getenv("PORT"), "mercurydict.com.crt", "mercurydict.com.key", gorillaHandlers.CORS(origins)(router))
 }
