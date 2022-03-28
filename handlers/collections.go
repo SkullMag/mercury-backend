@@ -83,11 +83,11 @@ func GetCollections(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if user.Username != vars["username"] && !user.IsSubscribed {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `{"error": "Subscribe to see another users collections"}`)
-		return
-	}
+	// if user.Username != vars["username"] && !user.IsSubscribed {
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	fmt.Fprint(w, `{"error": "Subscribe to see another users collections"}`)
+	// 	return
+	// }
 
 	response, _ := json.Marshal(&user.Collections)
 	fmt.Fprint(w, string(response))
@@ -128,11 +128,11 @@ func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if user.ID != collection.UserID && !user.IsSubscribed {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, `{"error": "Subscribe to see another users collections"}`)
-		return
-	}
+	// if user.ID != collection.UserID && !user.IsSubscribed {
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	fmt.Fprint(w, `{"error": "Subscribe to see another users collections"}`)
+	// 	return
+	// }
 	wordsToReturn := utils.GenerateWordsJSON(collection.Words, user)
 
 	response, _ := json.Marshal(wordsToReturn)
