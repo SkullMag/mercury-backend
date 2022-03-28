@@ -16,6 +16,7 @@ func main() {
 	api.HandleFunc("/signup", handlers.SignUp).Methods("POST")
 	api.HandleFunc("/login", handlers.Login).Methods("POST")
 	api.HandleFunc("/getUserData/{token}", handlers.GetUserData).Methods("GET")
+	api.HandleFunc("/getUserData/{token}/{username}", handlers.GetUserDataByUsername).Methods("GET")
 	api.HandleFunc("/getUserProfilePicture/{username}", handlers.GetUserProfilePicture).Methods("GET")
 	api.HandleFunc("/definition/{word}", handlers.GetDefinition).Methods("GET")
 	api.HandleFunc("/requestVerificationCode/{username}/{email}", handlers.RequestVerificationCode).Methods("GET")
