@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"mercury/database"
 	"mercury/models"
 	"mercury/utils"
 	"net/http"
@@ -17,7 +18,7 @@ func GetUserData(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	var user models.User
 
-	if status := utils.AuthenticateToken(&w, req, &user, vars["token"]); !status {
+	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
 		return
 	}
 
@@ -41,5 +42,26 @@ func GetUserProfilePicture(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.Write(fileBytes)
+
+}
+
+func GetUserDataByUsername(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	var user models.User
+	var requestedUser models.User
+
+	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
+		return
+	}
+
+	database.DB.Where("username = ?", vars["username"]).Find(&requestedUser)
+
+	response, _ := json.Marshal(map[string]string{
+		"username":     requestedUser.Username,
+		"fullname":     requestedUser.Fullname,
+		"profileBio":   requestedUser.ProfileBio,
+		"isSubscribed": strconv.FormatBool(requestedUser.IsSubscribed),
+	})
+	fmt.Fprint(w, string(response))
 
 }

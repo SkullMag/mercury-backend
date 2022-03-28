@@ -15,9 +15,16 @@ import (
 func LearnWords(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	var user models.User
+	var author models.User
 
 	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
 		return
+	}
+
+	if user.Username != vars["authorUsername"] {
+		database.DB.Where("username = ?", vars["authorUsername"]).Find(&author)
+	} else {
+		author = user
 	}
 
 	var words []map[string]string
@@ -39,7 +46,7 @@ func LearnWords(w http.ResponseWriter, req *http.Request) {
 		if res := database.DB.Where("word = ?", word["word"]).Find(&w); res.RowsAffected == 0 {
 			continue
 		}
-		if res := database.DB.Where("user_id = ? and name = ?", user.ID, strings.ToLower(vars["collectionName"])).Find(&collection); res.RowsAffected == 0 {
+		if res := database.DB.Where("user_id = ? and name = ?", author.ID, strings.ToLower(vars["collectionName"])).Find(&collection); res.RowsAffected == 0 {
 			continue
 		}
 		if res := database.DB.Where("collection_id = ? and word_id = ?", collection.ID, w.ID).Find(&collectionWord); res.RowsAffected == 0 {
