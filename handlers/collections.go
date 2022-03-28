@@ -94,6 +94,13 @@ func GetCollections(w http.ResponseWriter, req *http.Request) {
 
 }
 
+func GetAllCollections(w http.ResponseWriter, req *http.Request) {
+	var collections []models.Collection
+	database.DB.Preload("User").Preload("Words").Limit(100).Find(&collections)
+	response, _ := json.Marshal(&collections)
+	fmt.Fprint(w, string(response))
+}
+
 func GetCollectionWords(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	var user models.User
