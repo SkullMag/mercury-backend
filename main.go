@@ -15,8 +15,8 @@ func main() {
 	api := router.PathPrefix("/api").Subrouter()
 
 	// DELETE
-	api.HandleFunc("/deleteCollection/{token}/{collectionName}", handlers.DeleteCollection).Methods("DELETE")
-	api.HandleFunc("/deleteCollectionWord/{token}/{collectionName}/{word}", handlers.DeleteCollectionWord).Methods("DELETE")
+	api.HandleFunc("/deleteCollection/{token}/{collectionName}", handlers.DeleteCollection).Methods("POST")
+	api.HandleFunc("/deleteCollectionWord/{token}/{collectionName}/{word}", handlers.DeleteCollectionWord).Methods("POST")
 
 	// GET
 	api.HandleFunc("/getUserData/{token}", handlers.GetUserData).Methods("GET")
