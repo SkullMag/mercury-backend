@@ -1,5 +1,5 @@
 # Backend for Mercury - English Dictionary
-This repository contains code for backend of my english dictionary web application
+This repository contains code for backend of my English dictionary web application
 
 ## Why "Mercury"? 
 In my trip to the USA I have bought the book "Cosmic Queries" written by Neil deGrasse Tyson. However, my mother tongue is Russian, 
