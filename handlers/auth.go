@@ -26,7 +26,7 @@ func SignUp(w http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&user)
 	user.Username = strings.ToLower(user.Username)
 
-    if user != nil {
+    if err != nil {
         w.WriteHeader(http.StatusInternalServerError)
         errorResponse["error"] = "Error while decoding"
         response, _ := json.Marshal(errorResponse)
@@ -163,7 +163,7 @@ func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
 		database.DB.Create(&verificationCode)
 		utils.MailVerificationCode(verificationCode.Code, verificationCode.Email)
 	} else {
-		diff := time.Since(time.Unix(verificationCode.StartTime, 0))
+		// diff := time.Since(time.Unix(verificationCode.StartTime, 0))
 		// if diff.Seconds() < 60.0 {
 		// 	w.WriteHeader(http.StatusBadRequest)
 		// 	fmt.Fprint(w, `{"error": "Wait before requesting token"}`)
