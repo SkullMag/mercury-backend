@@ -156,11 +156,11 @@ func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
 		utils.MailVerificationCode(verificationCode.Code, verificationCode.Email)
 	} else {
 		diff := time.Since(time.Unix(verificationCode.StartTime, 0))
-		if diff.Seconds() < 60.0 {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprint(w, `{"error": "Wait before requesting token"}`)
-			return
-		}
+		// if diff.Seconds() < 60.0 {
+		// 	w.WriteHeader(http.StatusBadRequest)
+		// 	fmt.Fprint(w, `{"error": "Wait before requesting token"}`)
+		// 	return
+		// }
 		code, err := utils.GenerateVerificationCode()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
