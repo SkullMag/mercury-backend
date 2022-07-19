@@ -33,6 +33,7 @@ func SignUp(w http.ResponseWriter, req *http.Request) {
         fmt.Fprint(w, string(response))
         return
     }
+    fmt.Println(user.Username, user.Password, user.Email)
 	// Check body of request
 	if user.Username == "" || user.Password == "" || user.Email == "" {
 		w.WriteHeader(http.StatusBadRequest)
