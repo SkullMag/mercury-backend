@@ -26,8 +26,15 @@ func SignUp(w http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&user)
 	user.Username = strings.ToLower(user.Username)
 
+    if user != nil {
+        w.WriteHeader(http.StatusInternalServerError)
+        errorResponse["error"] = "Error while decoding"
+        response, _ := json.Marshal(errorResponse)
+        fmt.Fprint(w, string(response))
+        return
+    }
 	// Check body of request
-	if err != nil || user.Username == "" || user.Password == "" || user.Email == "" {
+	if user.Username == "" || user.Password == "" || user.Email == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse["error"] = "Username or password was not provided"
 		response, _ := json.Marshal(errorResponse)
