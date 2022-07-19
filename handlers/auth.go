@@ -146,6 +146,7 @@ func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
 		code, err := utils.GenerateVerificationCode()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
+            fmt.Fprint(w, `{"error": "Try to resend token"}`)
 			return
 		}
 		verificationCode.Code = code
@@ -164,6 +165,7 @@ func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
 		code, err := utils.GenerateVerificationCode()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
+            fmt.Fprint(w, `{"error": "Try to resend token"}`)
 			return
 		}
 		verificationCode.StartTime = time.Now().Unix()
