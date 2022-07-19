@@ -27,7 +27,7 @@ func SignUp(w http.ResponseWriter, req *http.Request) {
 	user.Username = strings.ToLower(user.Username)
 
 	// Check body of request
-	if err != nil || user.Username == "" || user.Password == "" || user.Fullname == "" || user.Email == "" {
+	if err != nil || user.Username == "" || user.Password == "" || user.Email == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse["error"] = "Username or password was not provided"
 		response, _ := json.Marshal(errorResponse)
