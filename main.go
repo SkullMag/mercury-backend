@@ -36,6 +36,6 @@ func main() {
 	api.HandleFunc("/learnWords/{token}/{authorUsername}/{collectionName}", handlers.LearnWords).Methods("POST")
 
 	origins := gorillaHandlers.AllowedOrigins([]string{"*"})
-	http.ListenAndServeTLS(":"+os.Getenv("PORT"), "mercurydict.com.crt", "mercurydict.com.key", gorillaHandlers.CORS(origins)(router))
-	// http.ListenAndServe(":"+os.Getenv("PORT"), gorillaHandlers.CORS(origins)(router))
+	// http.ListenAndServeTLS(":"+os.Getenv("PORT"), "mercurydict.com.crt", "mercurydict.com.key", gorillaHandlers.CORS(origins)(router))
+	http.ListenAndServe(":"+os.Getenv("PORT"), gorillaHandlers.CORS(origins)(router))
 }
