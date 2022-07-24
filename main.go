@@ -14,10 +14,6 @@ func main() {
 
 	api := router.PathPrefix("/api").Subrouter()
 
-	// DELETE
-	api.HandleFunc("/deleteCollection/{token}/{collectionName}", handlers.DeleteCollection).Methods("POST")
-	api.HandleFunc("/deleteCollectionWord/{token}/{collectionName}/{word}", handlers.DeleteCollectionWord).Methods("POST")
-
 	// GET
 	api.HandleFunc("/getUserData/{token}", handlers.GetUserData).Methods("GET")
 	api.HandleFunc("/getUserData/{token}/{username}", handlers.GetUserDataByUsername).Methods("GET")
@@ -34,6 +30,10 @@ func main() {
 	api.HandleFunc("/createCollection/{token}/{name}", handlers.CreateCollection).Methods("POST")
 	api.HandleFunc("/addWordToCollection/{token}/{collectionName}/{word}", handlers.AddWordToCollection).Methods("POST")
 	api.HandleFunc("/learnWords/{token}/{authorUsername}/{collectionName}", handlers.LearnWords).Methods("POST")
+    api.HandleFunc("/renameCollection/{token}/{oldName}/{newName}", handlers.RenameCollection).Methods("POST")
+
+	api.HandleFunc("/deleteCollection/{token}/{collectionName}", handlers.DeleteCollection).Methods("POST")
+	api.HandleFunc("/deleteCollectionWord/{token}/{collectionName}/{word}", handlers.DeleteCollectionWord).Methods("POST")
 
 	origins := gorillaHandlers.AllowedOrigins([]string{"*"})
 	// http.ListenAndServeTLS(":"+os.Getenv("PORT"), "mercurydict.com.crt", "mercurydict.com.key", gorillaHandlers.CORS(origins)(router))

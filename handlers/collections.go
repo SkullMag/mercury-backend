@@ -225,3 +225,23 @@ func DeleteCollectionWord(w http.ResponseWriter, req *http.Request) {
 	database.DB.Delete(&priorities)
 	database.DB.Delete(&collectionWord)
 }
+
+func RenameCollection(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+
+	var user models.User
+	var collection models.Collection
+
+	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
+		return
+	}
+
+	if res := database.DB.Where("name = ?", vars["oldName"]).Find(&collection); res.RowsAffected == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Collection was not found"}`)
+		return
+	}
+
+	collection.Name = vars["newName"]
+	database.DB.Save(&collection)
+}
