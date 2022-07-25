@@ -57,25 +57,28 @@ type CollectionWord struct {
 }
 
 type Collection struct {
-	ID        int              `json:"-"`
-	Name      string           `json:"name"`
-	Words     []CollectionWord `json:"-"`
-	UserID    int              `json:"-"`
-	User      User             `json:"username"`
-	Likes     int              `json:"likes"`
-	WordCount int              `json:"wordCount" gorm:"-"`
+	ID           int              `json:"-"`
+	Name         string           `json:"name"`
+	Words        []CollectionWord `json:"-"`
+	UserID       int              `json:"-"`
+	User         User             `json:"username"`
+	Likes        int              `json:"likes"`
+	WordCount    int              `json:"wordCount" gorm:"-"`
+	ContainsWord bool             `json:"containsWord" gorm:"-"`
 }
 
 func (c Collection) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		Name      string `json:"name"`
-		Likes     int    `json:"likes"`
-		WordCount int    `json:"wordCount"`
-		Username  string `json:"username"`
+		Name         string `json:"name"`
+		Likes        int    `json:"likes"`
+		WordCount    int    `json:"wordCount"`
+		Username     string `json:"username"`
+		ContainsWord bool   `json:"containsWord"`
 	}{
-		Name:      c.Name,
-		Likes:     c.Likes,
-		WordCount: len(c.Words),
-		Username:  c.User.Username,
+		Name:         c.Name,
+		Likes:        c.Likes,
+		WordCount:    len(c.Words),
+		Username:     c.User.Username,
+		ContainsWord: c.ContainsWord,
 	})
 }

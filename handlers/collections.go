@@ -76,7 +76,7 @@ func GetCollections(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	database.DB.Preload("Collections.Words").Preload("Collections.User").Where("username = ?", vars["username"]).Find(&user)
+	database.DB.Preload("Collections.Words.Word").Preload("Collections.User").Where("username = ?", vars["username"]).Find(&user)
 	if user.Username == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "User was not found"}`)
@@ -88,6 +88,19 @@ func GetCollections(w http.ResponseWriter, req *http.Request) {
 	// 	fmt.Fprint(w, `{"error": "Subscribe to see another users collections"}`)
 	// 	return
 	// }
+
+	if word, ok := vars["word"]; ok {
+		for i := 0; i < len(user.Collections); i++ {
+			status := false
+			for _, colWord := range user.Collections[i].Words {
+				if word == colWord.Word.Word {
+					status = true
+					break
+				}
+			}
+			user.Collections[i].ContainsWord = status
+		}
+	}
 
 	response, _ := json.Marshal(&user.Collections)
 	fmt.Fprint(w, string(response))
