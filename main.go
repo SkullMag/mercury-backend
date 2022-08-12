@@ -21,6 +21,7 @@ func main() {
 	api.HandleFunc("/getCollections", handlers.GetAllCollections).Methods("GET")
 	api.HandleFunc("/getCollections/{token}/{username}", handlers.GetCollections).Methods("GET")
 	api.HandleFunc("/getCollections/{token}/{username}/{word}", handlers.GetCollections).Methods("GET")
+	api.HandleFunc("/getUserStats/{username}", handlers.GetUserStats).Methods("GET")
 	api.HandleFunc("/getCollectionWords/{token}/{createdByUsername}/{collectionName}", handlers.GetCollectionWords).Methods("GET")
 	api.HandleFunc("/definition/{word}", handlers.GetDefinition).Methods("GET")
 	api.HandleFunc("/requestVerificationCode/{username}/{email}", handlers.RequestVerificationCode).Methods("GET")
@@ -35,6 +36,7 @@ func main() {
 
 	api.HandleFunc("/deleteCollection/{token}/{collectionName}", handlers.DeleteCollection).Methods("POST")
 	api.HandleFunc("/deleteCollectionWord/{token}/{collectionName}/{word}", handlers.DeleteCollectionWord).Methods("POST")
+    api.HandleFunc("/deleteProfile/{token}", handlers.DeleteProfile).Methods("POST")
 
 	origins := gorillaHandlers.AllowedOrigins([]string{"*"})
 	// http.ListenAndServeTLS(":"+os.Getenv("PORT"), "mercurydict.com.crt", "mercurydict.com.key", gorillaHandlers.CORS(origins)(router))

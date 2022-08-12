@@ -82,3 +82,9 @@ func (c Collection) MarshalJSON() ([]byte, error) {
 		ContainsWord: c.ContainsWord,
 	})
 }
+
+type Stats struct {
+	CollectionsCount  int `json:"collectionsCount"`
+	WordsCount        int `json:"wordsCount"`
+	LearnedWordsCount int `json:"learnedWordsCount"`
+}
