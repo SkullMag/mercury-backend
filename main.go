@@ -25,6 +25,7 @@ func main() {
 	api.HandleFunc("/getCollectionWords/{token}/{createdByUsername}/{collectionName}", handlers.GetCollectionWords).Methods("GET")
 	api.HandleFunc("/definition/{word}", handlers.GetDefinition).Methods("GET")
 	api.HandleFunc("/requestVerificationCode/{username}/{email}", handlers.RequestVerificationCode).Methods("GET")
+    api.HandleFunc("/getSubscriptionStatus/{username}", handlers.IsSubscribed).Methods("GET")
 
 	// POST
 	api.HandleFunc("/signup", handlers.SignUp).Methods("POST")

@@ -188,3 +188,18 @@ func RequestVerificationCode(w http.ResponseWriter, req *http.Request) {
 	}
 
 }
+
+func IsSubscribed(w http.ResponseWriter, req *http.Request) {
+    vars := mux.Vars(req)
+
+    if _, ok := vars["username"]; !ok {
+        w.WriteHeader(http.StatusBadRequest)
+        fmt.Fprint(w, `{"error": "No username provided"}`)
+        return   
+    }
+
+    var isSubscribed bool
+    database.DB.Table("users").Select("is_subscribed").Where("username = ?", vars["username"]).Find(&isSubscribed)
+
+    fmt.Fprint(w, fmt.Sprintf(`{"isSubscribed": %t}`, isSubscribed))
+}
