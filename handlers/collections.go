@@ -71,13 +71,14 @@ func DeleteCollection(w http.ResponseWriter, req *http.Request) {
 func GetCollections(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	var user models.User
+    var foundUser models.User
 
 	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
 		return
 	}
 
-	database.DB.Preload("Collections.Words.Word").Preload("Collections.User").Where("username = ?", vars["username"]).Find(&user)
-	if user.Username == "" {
+	database.DB.Preload("Collections.Words.Word").Preload("Collections.User").Where("username = ?", vars["username"]).Find(&foundUser)
+	if foundUser.Username == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "User was not found"}`)
 		return
@@ -90,23 +91,23 @@ func GetCollections(w http.ResponseWriter, req *http.Request) {
 	// }
 
 
-    for i := 0; i < len(user.Collections); i++ {
+    for i := 0; i < len(foundUser.Collections); i++ {
         var favourite models.Favourite
-        res := database.DB.Where("user_id = ? AND collection_id = ?", user.ID, user.Collections[i].ID).Find(&favourite)
-        user.Collections[i].IsFavourite = res.RowsAffected > 0
+        res := database.DB.Where("user_id = ? AND collection_id = ?", user.ID, foundUser.Collections[i].ID).Find(&favourite)
+        foundUser.Collections[i].IsFavourite = res.RowsAffected > 0
         if word, ok := vars["word"]; ok {
             status := false
-            for _, colWord := range user.Collections[i].Words {
+            for _, colWord := range foundUser.Collections[i].Words {
                 if word == colWord.Word.Word {
                     status = true
                     break
                 }
             }
-            user.Collections[i].ContainsWord = status
+            foundUser.Collections[i].ContainsWord = status
        }
     }
 
-	response, _ := json.Marshal(&user.Collections)
+	response, _ := json.Marshal(&foundUser.Collections)
 	fmt.Fprint(w, string(response))
 
 }
