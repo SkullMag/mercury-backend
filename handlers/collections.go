@@ -306,6 +306,24 @@ func AddCollectionToFavourites(w http.ResponseWriter, req *http.Request) {
 }
 
 func RemoveCollectionFromFavourites(w http.ResponseWriter, req *http.Request) {
+    vars := mux.Vars(req)
+
+    var user models.User
+    var favourite models.Favourite
+
+    if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
+        return
+    }
+
+    res := database.DB.Where("user_id = ? AND collection_id = ?", user.ID, vars["collection_id"]).Find(&favourite)
+    if res.RowsAffected == 0 {
+        w.WriteHeader(http.StatusBadRequest)
+        fmt.Fprint(w, `{"error": "Collection is not in favourites"}`)
+        return
+    }
+    
+    database.DB.Delete(&favourite)
+
 }
 
 func GetFavouriteCollections(w http.ResponseWriter, req *http.Request) {
@@ -313,7 +331,7 @@ func GetFavouriteCollections(w http.ResponseWriter, req *http.Request) {
     
     var user models.User
     var favourites []models.Favourite
-    var collections []models.Collection
+    var collections []models.Collection = make([]models.Collection, 0)
 
     if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
         return
