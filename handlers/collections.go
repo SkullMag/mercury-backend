@@ -200,7 +200,7 @@ func AddWordToCollection(w http.ResponseWriter, req *http.Request) {
 	var dbWord models.Word
 	var collectionWord models.CollectionWord
 	var priority models.Priority
-	response := database.DB.Where("word = ?", strings.ToLower(vars["word"])).Find(&dbWord)
+	response := database.DB.Where("word = ? AND is_created = false", strings.ToLower(vars["word"])).Find(&dbWord)
 	if response.RowsAffected > 0 {
 		collectionWord.CollectionID = collection.ID
 		collectionWord.WordID = dbWord.ID
