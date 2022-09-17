@@ -71,7 +71,7 @@ func DeleteCollection(w http.ResponseWriter, req *http.Request) {
 func GetCollections(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	var user models.User
-    var foundUser models.User
+	var foundUser models.User
 
 	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
 		return
@@ -90,22 +90,21 @@ func GetCollections(w http.ResponseWriter, req *http.Request) {
 	// 	return
 	// }
 
-
-    for i := 0; i < len(foundUser.Collections); i++ {
-        var favourite models.Favourite
-        res := database.DB.Where("user_id = ? AND collection_id = ?", user.ID, foundUser.Collections[i].ID).Find(&favourite)
-        foundUser.Collections[i].IsFavourite = res.RowsAffected > 0
-        if word, ok := vars["word"]; ok {
-            status := false
-            for _, colWord := range foundUser.Collections[i].Words {
-                if word == colWord.Word.Word {
-                    status = true
-                    break
-                }
-            }
-            foundUser.Collections[i].ContainsWord = status
-       }
-    }
+	for i := 0; i < len(foundUser.Collections); i++ {
+		var favourite models.Favourite
+		res := database.DB.Where("user_id = ? AND collection_id = ?", user.ID, foundUser.Collections[i].ID).Find(&favourite)
+		foundUser.Collections[i].IsFavourite = res.RowsAffected > 0
+		if word, ok := vars["word"]; ok {
+			status := false
+			for _, colWord := range foundUser.Collections[i].Words {
+				if word == colWord.Word.Word {
+					status = true
+					break
+				}
+			}
+			foundUser.Collections[i].ContainsWord = status
+		}
+	}
 
 	response, _ := json.Marshal(&foundUser.Collections)
 	fmt.Fprint(w, string(response))
@@ -113,21 +112,21 @@ func GetCollections(w http.ResponseWriter, req *http.Request) {
 }
 
 func GetAllCollections(w http.ResponseWriter, req *http.Request) {
-    vars := mux.Vars(req)
-    var user models.User
+	vars := mux.Vars(req)
+	var user models.User
 	var collections []models.Collection
 
 	database.DB.Preload("User").Preload("Words").Limit(100).Find(&collections)
-    if token, ok := vars["token"]; ok {
-        if !utils.AuthenticateToken(&w, req, &user, token) {
-            return
-        }
-        for i := 0; i < len(collections); i++ {
-            var favourite models.Favourite
-            res := database.DB.Where("user_id = ? AND collection_id = ?", user.ID, collections[i].ID).Find(&favourite)
-            collections[i].IsFavourite = res.RowsAffected > 0
-        }
-    }
+	if token, ok := vars["token"]; ok {
+		if !utils.AuthenticateToken(&w, req, &user, token) {
+			return
+		}
+		for i := 0; i < len(collections); i++ {
+			var favourite models.Favourite
+			res := database.DB.Where("user_id = ? AND collection_id = ?", user.ID, collections[i].ID).Find(&favourite)
+			collections[i].IsFavourite = res.RowsAffected > 0
+		}
+	}
 	response, _ := json.Marshal(&collections)
 	fmt.Fprint(w, string(response))
 }
@@ -224,7 +223,7 @@ func AddWordToCollection(w http.ResponseWriter, req *http.Request) {
 func DeleteCollectionWord(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	var user models.User
-	var word models.Word
+	var words []models.Word
 	var collection models.Collection
 	var collectionWord models.CollectionWord
 	var priorities []models.Priority
@@ -233,7 +232,7 @@ func DeleteCollectionWord(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if res := database.DB.Where("word = ?", strings.ToLower(vars["word"])).Find(&word); res.RowsAffected == 0 {
+	if res := database.DB.Where("word = ?", strings.ToLower(vars["word"])).Find(&words); res.RowsAffected == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "Word was not found"}`)
 		return
@@ -245,7 +244,12 @@ func DeleteCollectionWord(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if res := database.DB.Where("word_id = ? and collection_id = ?", word.ID, collection.ID).Find(&collectionWord); res.RowsAffected == 0 {
+	wordIDs := make([]int, 0)
+	for _, word := range words {
+		wordIDs = append(wordIDs, word.ID)
+	}
+
+	if res := database.DB.Where("word_id IN ? and collection_id = ?", wordIDs, collection.ID).Find(&collectionWord); res.RowsAffected == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "Word is not in collection"}`)
 		return
@@ -278,74 +282,73 @@ func RenameCollection(w http.ResponseWriter, req *http.Request) {
 }
 
 func AddCollectionToFavourites(w http.ResponseWriter, req *http.Request) {
-    vars := mux.Vars(req)
+	vars := mux.Vars(req)
 
-    var user models.User
-    var collection models.Collection
-    var favourite models.Favourite
-    
-    if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
-        return
-    }
+	var user models.User
+	var collection models.Collection
+	var favourite models.Favourite
 
-    if res := database.DB.Where("id = ?", vars["collection_id"]).Find(&collection); res.RowsAffected == 0 {
-        w.WriteHeader(http.StatusBadRequest)
-        fmt.Fprint(w, `{"error": "Collection doesn't exist"}`)
-        return
-    }
+	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
+		return
+	}
 
-    if res := database.DB.Where("collection_id = ? AND user_id = ?", collection.ID, user.ID).Find(&favourite); res.RowsAffected > 0 {
-        w.WriteHeader(http.StatusBadRequest)
-        fmt.Fprint(w, `{"error": "Collection is already in favourites"}`)
-        return
-    }
+	if res := database.DB.Where("id = ?", vars["collection_id"]).Find(&collection); res.RowsAffected == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Collection doesn't exist"}`)
+		return
+	}
 
-    favourite.UserID = user.ID
-    favourite.CollectionID = collection.ID
+	if res := database.DB.Where("collection_id = ? AND user_id = ?", collection.ID, user.ID).Find(&favourite); res.RowsAffected > 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Collection is already in favourites"}`)
+		return
+	}
 
-    database.DB.Create(&favourite)
+	favourite.UserID = user.ID
+	favourite.CollectionID = collection.ID
+
+	database.DB.Create(&favourite)
 }
 
 func RemoveCollectionFromFavourites(w http.ResponseWriter, req *http.Request) {
-    vars := mux.Vars(req)
+	vars := mux.Vars(req)
 
-    var user models.User
-    var favourite models.Favourite
+	var user models.User
+	var favourite models.Favourite
 
-    if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
-        return
-    }
+	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
+		return
+	}
 
-    res := database.DB.Where("user_id = ? AND collection_id = ?", user.ID, vars["collection_id"]).Find(&favourite)
-    if res.RowsAffected == 0 {
-        w.WriteHeader(http.StatusBadRequest)
-        fmt.Fprint(w, `{"error": "Collection is not in favourites"}`)
-        return
-    }
-    
-    database.DB.Delete(&favourite)
+	res := database.DB.Where("user_id = ? AND collection_id = ?", user.ID, vars["collection_id"]).Find(&favourite)
+	if res.RowsAffected == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Collection is not in favourites"}`)
+		return
+	}
+
+	database.DB.Delete(&favourite)
 
 }
 
 func GetFavouriteCollections(w http.ResponseWriter, req *http.Request) {
-    vars := mux.Vars(req)
-    
-    var user models.User
-    var favourites []models.Favourite
-    var collections []models.Collection = make([]models.Collection, 0)
+	vars := mux.Vars(req)
 
-    if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
-        return
-    }
+	var user models.User
+	var favourites []models.Favourite
+	var collections []models.Collection = make([]models.Collection, 0)
+
+	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
+		return
+	}
 
 	database.DB.Preload("Collection.Words.Word").Preload("Collection.User").Where("user_id = ?", user.ID).Find(&favourites)
 
-    
-    for _, favourite := range favourites {
-        favourite.Collection.IsFavourite = true
-        collections = append(collections, favourite.Collection)
-    }
+	for _, favourite := range favourites {
+		favourite.Collection.IsFavourite = true
+		collections = append(collections, favourite.Collection)
+	}
 
-    response, _ := json.Marshal(collections)
-    fmt.Fprint(w, string(response))
+	response, _ := json.Marshal(collections)
+	fmt.Fprint(w, string(response))
 }
