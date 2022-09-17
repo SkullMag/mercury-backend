@@ -158,7 +158,7 @@ func AddWord(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if res := database.DB.Where("id = ?", wordToAdd.CollectionID).Find(&collection); res.RowsAffected == 0 {
+	if res := database.DB.Where("id = ? AND user_id = ?", wordToAdd.CollectionID, user.ID).Find(&collection); res.RowsAffected == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, `{"error": "Collection was not found"}`)
 		return
