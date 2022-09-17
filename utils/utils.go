@@ -102,6 +102,7 @@ func GenerateWordsJSON(words []models.CollectionWord, user models.User) []map[st
 		var priority models.Priority
 		database.DB.Model(&models.Priority{}).Where("collection_word_id = ? and user_id = ?", word.ID, user.ID).Select("priority").Find(&priority)
 		result := make(map[string]any)
+		result["id"] = word.Word.ID
 		result["word"] = word.Word.Word
 		result["definitions"] = definitions
 		result["phonetics"] = word.Word.Phonetics

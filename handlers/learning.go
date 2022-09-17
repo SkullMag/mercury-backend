@@ -43,7 +43,7 @@ func LearnWords(w http.ResponseWriter, req *http.Request) {
 		var collectionWord models.CollectionWord
 		var priority models.Priority
 
-		if res := database.DB.Where("word = ?", word["word"]).Find(&w); res.RowsAffected == 0 {
+		if res := database.DB.Where("id = ?", word["wordID"]).Find(&w); res.RowsAffected == 0 {
 			continue
 		}
 		if res := database.DB.Where("user_id = ? and name = ?", author.ID, strings.ToLower(vars["collectionName"])).Find(&collection); res.RowsAffected == 0 {

@@ -39,7 +39,7 @@ func main() {
 	api.HandleFunc("/addNewWord/{token}", handlers.AddWord).Methods("POST")
 
 	api.HandleFunc("/deleteCollection/{token}/{collectionName}", handlers.DeleteCollection).Methods("POST")
-	api.HandleFunc("/deleteCollectionWord/{token}/{collectionName}/{word}", handlers.DeleteCollectionWord).Methods("POST")
+	api.HandleFunc("/deleteCollectionWord/{token}/{collectionName}/{wordID}", handlers.DeleteCollectionWord).Methods("POST")
 	api.HandleFunc("/deleteProfile/{token}", handlers.DeleteProfile).Methods("POST")
 
 	api.HandleFunc("/addCollectionToFavourites/{token}/{collection_id}", handlers.AddCollectionToFavourites).Methods("POST")

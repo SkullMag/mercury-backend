@@ -223,7 +223,7 @@ func AddWordToCollection(w http.ResponseWriter, req *http.Request) {
 func DeleteCollectionWord(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	var user models.User
-	var words []models.Word
+	var word models.Word
 	var collection models.Collection
 	var collectionWord models.CollectionWord
 	var priorities []models.Priority
@@ -232,7 +232,7 @@ func DeleteCollectionWord(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if res := database.DB.Where("word = ?", strings.ToLower(vars["word"])).Find(&words); res.RowsAffected == 0 {
+	if res := database.DB.Where("id = ?", vars["wordID"]).Find(&word); res.RowsAffected == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "Word was not found"}`)
 		return
@@ -244,12 +244,7 @@ func DeleteCollectionWord(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	wordIDs := make([]int, 0)
-	for _, word := range words {
-		wordIDs = append(wordIDs, word.ID)
-	}
-
-	if res := database.DB.Where("word_id IN ? and collection_id = ?", wordIDs, collection.ID).Find(&collectionWord); res.RowsAffected == 0 {
+	if res := database.DB.Where("word_id = ? and collection_id = ?", word.ID, collection.ID).Find(&collectionWord); res.RowsAffected == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "Word is not in collection"}`)
 		return
