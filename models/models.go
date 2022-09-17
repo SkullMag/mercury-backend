@@ -65,26 +65,26 @@ type Collection struct {
 	Likes        int              `json:"likes"`
 	WordCount    int              `json:"wordCount" gorm:"-"`
 	ContainsWord bool             `json:"containsWord" gorm:"-"`
-    IsFavourite  bool             `json:"isFavourite" gorm:"-"`
+	IsFavourite  bool             `json:"isFavourite" gorm:"-"`
 }
 
 func (c Collection) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-        ID           int    `json:"id"`
+		ID           int    `json:"id"`
 		Name         string `json:"name"`
 		Likes        int    `json:"likes"`
 		WordCount    int    `json:"wordCount"`
 		Username     string `json:"username"`
 		ContainsWord bool   `json:"containsWord"`
-        IsFavourite  bool   `json:"isFavourite"`
+		IsFavourite  bool   `json:"isFavourite"`
 	}{
-        ID:           c.ID,
+		ID:           c.ID,
 		Name:         c.Name,
 		Likes:        c.Likes,
 		WordCount:    len(c.Words),
 		Username:     c.User.Username,
 		ContainsWord: c.ContainsWord,
-        IsFavourite:  c.IsFavourite,
+		IsFavourite:  c.IsFavourite,
 	})
 }
 
@@ -95,8 +95,14 @@ type Stats struct {
 }
 
 type Favourite struct {
-    ID           int 
-    UserID       int 
-    CollectionID int
-    Collection   Collection
+	ID           int
+	UserID       int
+	CollectionID int
+	Collection   Collection
+}
+
+type WordToAdd struct {
+	Word         string `json:"word"`
+	Definition   string `json:"definition"`
+	CollectionID int    `json:"collectionID"`
 }
