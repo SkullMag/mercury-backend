@@ -104,20 +104,20 @@ func GetDefinition(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 
 	var word models.Word
-	database.DB.Where("word = ? AND is_created = 0", vars["word"]).First(&word)
-	if word.Word == "" {
-		if err := getFreeDictionaryAPIDefinition(vars["word"]); err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, `{"error": "Word was not found"}`)
-			return
-		}
-		var newWord models.Word
-		res := database.DB.Where("word = ?", strings.ToLower(vars["word"])).First(&newWord)
-		if res.RowsAffected > 0 {
-			word = newWord
-		}
-	}
-	if word.Word == "" {
+
+	//if word.Word == "" {
+	//	if err := getFreeDictionaryAPIDefinition(vars["word"]); err != nil {
+	//		w.WriteHeader(http.StatusNotFound)
+	//		fmt.Fprint(w, `{"error": "Word was not found"}`)
+	//		return
+	//	}
+	//	var newWord models.Word
+	//	res := database.DB.Where("word = ?", strings.ToLower(vars["word"])).First(&newWord)
+	//	if res.RowsAffected > 0 {
+	//		word = newWord
+	//	}
+	//}
+	if res := database.DB.Where("word = ? AND is_created = false", vars["word"]).First(&word); res.RowsAffected == 0 {
 		// Word wasn't found in database
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, `{"error": "Word was not found"}`)
@@ -133,6 +133,7 @@ func GetDefinition(w http.ResponseWriter, req *http.Request) {
 		})
 	}
 	result := make(map[string]any)
+	result["id"] = word.ID
 	result["word"] = word.Word
 	result["definitions"] = definitions
 	result["phonetics"] = word.Phonetics
