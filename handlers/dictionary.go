@@ -104,7 +104,7 @@ func GetDefinition(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 
 	var word models.Word
-	database.DB.Where("word = ?", vars["word"]).First(&word)
+	database.DB.Where("word = ? AND is_created = 0", vars["word"]).First(&word)
 	if word.Word == "" {
 		if err := getFreeDictionaryAPIDefinition(vars["word"]); err != nil {
 			w.WriteHeader(http.StatusNotFound)
