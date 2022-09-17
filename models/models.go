@@ -21,6 +21,7 @@ type Word struct {
 	Word        string       `json:"word"`
 	Phonetics   string       `json:"phonetics"`
 	Definitions []Definition `json:"definitions"`
+	IsCreated   bool         `json:"-"`
 }
 
 type Definition struct {

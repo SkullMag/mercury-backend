@@ -176,8 +176,9 @@ func AddWord(w http.ResponseWriter, req *http.Request) {
 	maxWordID++
 
 	database.DB.Create(&models.Word{
-		ID:   maxWordID,
-		Word: wordToAdd.Word,
+		ID:        maxWordID,
+		Word:      wordToAdd.Word,
+		IsCreated: true,
 	})
 
 	// TODO: replace with autoincrement
