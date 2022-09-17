@@ -164,7 +164,7 @@ func AddWord(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if wordToAdd.Word == "" || wordToAdd.Definition == "" {
+	if wordToAdd.Term == "" || wordToAdd.Definition == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error": "Name or definition was not specified"}`)
 		return
@@ -177,7 +177,7 @@ func AddWord(w http.ResponseWriter, req *http.Request) {
 
 	database.DB.Create(&models.Word{
 		ID:        maxWordID,
-		Word:      wordToAdd.Word,
+		Word:      wordToAdd.Term,
 		IsCreated: true,
 	})
 

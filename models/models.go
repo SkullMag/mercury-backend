@@ -103,7 +103,7 @@ type Favourite struct {
 }
 
 type WordToAdd struct {
-	Word         string `json:"word"`
+	Term         string `json:"term"`
 	Definition   string `json:"definition"`
 	CollectionID int    `json:"collectionID"`
 }
