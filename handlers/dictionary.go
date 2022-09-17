@@ -6,6 +6,7 @@ import (
 	"io"
 	"mercury/database"
 	"mercury/models"
+	"mercury/utils"
 	"net/http"
 	"strings"
 
@@ -138,4 +139,70 @@ func GetDefinition(w http.ResponseWriter, req *http.Request) {
 
 	jsonData, _ := json.Marshal(result)
 	fmt.Fprint(w, string(jsonData))
+}
+
+func AddWord(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	var user models.User
+	var wordToAdd models.WordToAdd
+	var collection models.Collection
+
+	if !utils.AuthenticateToken(&w, req, &user, vars["token"]) {
+		return
+	}
+
+	decoder := json.NewDecoder(req.Body)
+	if err := decoder.Decode(&wordToAdd); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Invalid request body"}`)
+		return
+	}
+
+	if res := database.DB.Where("id = ?", wordToAdd.CollectionID).Find(&collection); res.RowsAffected == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, `{"error": "Collection was not found"}`)
+		return
+	}
+
+	if wordToAdd.Word == "" || wordToAdd.Definition == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"error": "Name or definition was not specified"}`)
+		return
+	}
+
+	// TODO: replace with autoincrement
+	var maxWordID int
+	database.DB.Table("words").Select("max(id)").Find(&maxWordID)
+	maxWordID++
+
+	database.DB.Create(&models.Word{
+		ID:   maxWordID,
+		Word: wordToAdd.Word,
+	})
+
+	// TODO: replace with autoincrement
+	var maxDefinitionID int
+	database.DB.Table("definitions").Select("max(id)").Find(&maxDefinitionID)
+	maxDefinitionID++
+
+	database.DB.Create(&models.Definition{
+		ID:         maxDefinitionID,
+		Definition: wordToAdd.Definition,
+		WordID:     maxWordID,
+	})
+
+	collectionWord := models.CollectionWord{
+		CollectionID: collection.ID,
+		WordID:       maxWordID,
+	}
+
+	database.DB.Create(&collectionWord)
+
+	database.DB.Create(&models.Priority{
+		UserID:           user.ID,
+		CollectionID:     collection.ID,
+		CollectionWordID: collectionWord.ID,
+		Priority:         1,
+	})
+
 }
